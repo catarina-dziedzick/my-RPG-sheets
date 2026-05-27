@@ -3,7 +3,12 @@ package com.myrpgsheets.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.List;
 
 @Entity
 @Table(name = "characters")
@@ -29,6 +34,8 @@ public class RpgCharacter {
 
     private Integer hitPoints;
 
+    private Integer armorClass;
+
     private Integer strength;
     private Integer dexterity;
     private Integer constitution;
@@ -44,4 +51,13 @@ public class RpgCharacter {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InventoryItem> inventoryItems;
+
+    @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CharacterSpell> spells;
+
+    @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SpellSlot> spellSlots;
 }
