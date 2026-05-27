@@ -1,4 +1,4 @@
-package com.myRPG.room;
+package com.myrpgsheets;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

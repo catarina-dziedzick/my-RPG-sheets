@@ -1,3 +1,16 @@
 spring:
   application:
-    name: demo
+    name: myrpgsheets
+  datasource:
+    url: jdbc:mysql://localhost:3306/myrpgsheets
+    username: root
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  thymeleaf:
+    cache: false

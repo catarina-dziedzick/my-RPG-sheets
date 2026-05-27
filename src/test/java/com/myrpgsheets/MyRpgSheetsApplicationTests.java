@@ -1,4 +1,4 @@
-package com.myRPG.room;
+package com.myrpgsheets;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
