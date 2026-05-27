@@ -112,6 +112,16 @@
                 Descrição do personagem.
             </p>
         </div>
+
+        <div class="d-flex gap-3 mt-4 flex-wrap">
+            <a th:href="@{/characters/edit/{id}(id=${character.id})}" class="btn btn-warning btn-lg fw-semibold">
+                Editar ficha
+            </a>
+            <a href="/characters" class="btn btn-outline-secondary btn-lg">
+                Voltar ao dashboard
+            </a>
+        </div>
+
     </section>
 </main>
 

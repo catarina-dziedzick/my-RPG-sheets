@@ -11,25 +11,25 @@ import java.util.Optional;
 @Service
 public class RpgCharacterService {
 
-    private final RpgCharacterRepository rpgCharacterRepository;
+    private final RpgCharacterRepository characterRepository;
 
-    public RpgCharacterService(RpgCharacterRepository rpgCharacterRepository) {
-        this.rpgCharacterRepository = rpgCharacterRepository;
+    public RpgCharacterService(RpgCharacterRepository characterRepository) {
+        this.characterRepository = characterRepository;
     }
 
     public List<RpgCharacter> findByUser(User user) {
-        return rpgCharacterRepository.findByUser(user);
+        return characterRepository.findByUser(user);
     }
 
-    public RpgCharacter save(RpgCharacter rpgCharacter) {
-        return rpgCharacterRepository.save(rpgCharacter);
+    public RpgCharacter save(RpgCharacter character) {
+        return characterRepository.save(character);
     }
 
     public Optional<RpgCharacter> findById(Long id) {
-        return rpgCharacterRepository.findById(id);
+        return characterRepository.findById(id);
     }
 
     public void delete(Long id) {
-        rpgCharacterRepository.deleteById(id);
+        characterRepository.deleteById(id);
     }
 }

@@ -81,6 +81,10 @@
                             Ver
                         </a>
 
+                        <a th:href="@{/characters/edit/{id}(id=${character.id})}" class="btn btn-outline-warning flex-fill">
+                            Editar
+                        </a>
+
                         <a th:href="@{/characters/delete/{id}(id=${character.id})}"
                            class="btn btn-outline-danger flex-fill"
                            onclick="return confirm('Tem certeza que deseja excluir esta ficha?')">

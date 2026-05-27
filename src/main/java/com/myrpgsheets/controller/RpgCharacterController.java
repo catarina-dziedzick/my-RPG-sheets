@@ -88,6 +88,31 @@ public class RpgCharacterController {
         return "characters/view";
     }
 
+    @GetMapping("/edit/{id}")
+    public String editCharacter(@PathVariable Long id, HttpSession session, Model model) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(id);
+
+        if (characterOptional.isEmpty()) {
+            return "redirect:/characters";
+        }
+
+        RpgCharacter character = characterOptional.get();
+
+        if (!character.getUser().getId().equals(user.getId())) {
+            return "redirect:/characters";
+        }
+
+        model.addAttribute("character", character);
+
+        return "characters/form";
+    }
+
     @GetMapping("/delete/{id}")
     public String delete(@PathVariable Long id, HttpSession session) {
         User user = (User) session.getAttribute("loggedUser");
