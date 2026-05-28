@@ -18,6 +18,40 @@
 </nav>
 
 <main class="container py-5">
+    <ul class="nav nav-pills sheet-tabs mb-4" id="sheetTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-overview-btn" data-bs-toggle="pill"
+                    data-bs-target="#tab-overview" type="button" role="tab"
+                    aria-controls="tab-overview" aria-selected="true">
+                Visão Geral
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-inventory-btn" data-bs-toggle="pill"
+                    data-bs-target="#tab-inventory" type="button" role="tab"
+                    aria-controls="tab-inventory" aria-selected="false">
+                Inventário
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-spells-btn" data-bs-toggle="pill"
+                    data-bs-target="#tab-spells" type="button" role="tab"
+                    aria-controls="tab-spells" aria-selected="false">
+                Magias
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-abilities-btn" data-bs-toggle="pill"
+                    data-bs-target="#tab-abilities" type="button" role="tab"
+                    aria-controls="tab-abilities" aria-selected="false">
+                Habilidades
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="sheetTabsContent">
+
+    <div class="tab-pane fade show active" id="tab-overview" role="tabpanel" aria-labelledby="tab-overview-btn">
     <section class="sheet-card mb-4">
         <div class="row g-4 align-items-center mb-4">
             <div class="col-md-3 text-center">
@@ -33,40 +67,68 @@
                     Nome do Personagem
                 </h1>
 
-                <p class="lead text-muted mb-0">
+                <p class="lead text-muted mb-2">
                     <span th:text="${character.race != null && character.race != '' ? character.race : 'Raça não informada'}">Raça</span>
                     •
                     <span th:text="${character.characterClass != null && character.characterClass != '' ? character.characterClass : 'Classe não informada'}">Classe</span>
                     • Nível
                     <span th:text="${character.level != null ? character.level : '-'}">1</span>
                 </p>
+
+                <!-- XP inline no cabeçalho -->
+                <div class="xp-inline"
+                     th:with="xp=${character.experiencePoints != null ? character.experiencePoints : 0},
+                              pct=${character.xpProgressPercent},
+                              maxLvl=${character.maxLevel},
+                              need=${character.xpNeededForNextLevel},
+                              into=${character.xpIntoCurrentLevel}">
+                    <div class="xp-inline-top">
+                        <span class="xp-inline-label">XP</span>
+                        <span class="xp-inline-value" th:text="${xp}">0</span>
+                        <span class="xp-inline-sep" th:if="${!maxLvl}">
+                            — <span th:text="${into}">0</span>/<span th:text="${need}">300</span> neste nível
+                        </span>
+                        <span class="xp-inline-max" th:if="${maxLvl}">Nível máximo</span>
+                    </div>
+                    <div class="xp-inline-track">
+                        <div class="xp-inline-fill" th:style="'width:' + ${pct} + '%'"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="row g-3 mb-3">
-            <div class="col-12">
-                <div class="info-box hp-box"
-                     th:with="hp=${character.hitPoints != null ? character.hitPoints : 0}, hpPercent=${hp > 100 ? 100 : (hp < 0 ? 0 : hp)}">
-                    <span>Pontos de Vida</span>
-                    <strong th:text="${hp}">10</strong>
+            <!-- HP atual + barra real (atual/máximo) -->
+            <div class="col-md-7">
+                <div class="hp-card"
+                     th:with="hp=${character.hitPoints != null ? character.hitPoints : 0},
+                              maxHp=${character.maxHitPoints != null ? character.maxHitPoints : 0},
+                              hpPct=${character.hpPercent}">
 
-                    <div class="hp-track mt-2">
-                        <div class="hp-fill"
-                             th:classappend="${hpPercent <= 30 ? ' hp-fill-low' : (hpPercent <= 60 ? ' hp-fill-mid' : ' hp-fill-high')}"
-                             th:style="'width:' + ${hpPercent} + '%'">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="hp-card-label">Pontos de Vida</span>
+                        <span class="hp-card-fraction">
+                            <strong th:text="${hp}">10</strong>
+                            <span class="hp-card-sep">/</span>
+                            <span th:text="${maxHp > 0 ? maxHp : '—'}">10</span>
+                        </span>
+                    </div>
+
+                    <div class="hp-card-track mt-1">
+                        <div class="hp-card-fill"
+                             th:classappend="${hpPct <= 30 ? ' hp-fill-low' : (hpPct <= 60 ? ' hp-fill-mid' : ' hp-fill-high')}"
+                             th:style="'width:' + ${hpPct} + '%'">
                         </div>
                     </div>
 
-                    <small class="hp-caption" th:text="${hp} + '/100 (escala visual)'"></small>
-
                     <div class="hp-actions mt-2">
-                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
-                            <input type="hidden" name="delta" value="-1">
-                            <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">-1</button>
-                        </form>
                         <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
                             <input type="hidden" name="delta" value="-5">
                             <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">-5</button>
+                        </form>
+                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
+                            <input type="hidden" name="delta" value="-1">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">-1</button>
                         </form>
                         <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
                             <input type="hidden" name="delta" value="1">
@@ -83,10 +145,43 @@
                           method="post">
                         <input type="number"
                                name="hitPoints"
-                               class="form-control form-control-sm hp-input"
+                               class="form-control form-control-sm"
+                               style="max-width: 100px;"
                                min="0"
-                               th:value="${character.hitPoints != null ? character.hitPoints : 0}">
+                               th:max="${maxHp > 0 ? maxHp : 9999}"
+                               th:value="${hp}">
                         <button type="submit" class="btn btn-sm btn-warning fw-semibold hp-save-btn">Atualizar</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Vida Temporária -->
+            <div class="col-md-5">
+                <div class="temp-hp-card"
+                     th:with="tmp=${character.temporaryHitPoints != null ? character.temporaryHitPoints : 0}">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="hp-card-label temp-hp-label">Vida Temporária</span>
+                        <strong class="temp-hp-value" th:text="${tmp}">0</strong>
+                    </div>
+
+                    <div class="temp-hp-pips">
+                        <span class="temp-hp-pip"
+                              th:classappend="${tmp > 0 ? ' active' : ''}">✦</span>
+                        <small class="text-muted ms-2" th:if="${tmp == 0}">Nenhuma vida temporária</small>
+                        <small class="ms-2 temp-hp-active-text" th:if="${tmp > 0}"
+                               th:text="${tmp} + ' pontos temporários ativos'">0 pontos</small>
+                    </div>
+
+                    <form class="hp-set-form mt-2"
+                          th:action="@{/characters/{id}/temp-hp/set(id=${character.id})}"
+                          method="post">
+                        <input type="number"
+                               name="temporaryHitPoints"
+                               class="form-control form-control-sm"
+                               style="max-width: 100px;"
+                               min="0"
+                               th:value="${tmp}">
+                        <button type="submit" class="btn btn-sm btn-warning fw-semibold hp-save-btn">Definir</button>
                     </form>
                 </div>
             </div>
@@ -94,23 +189,23 @@
 
         <div class="row g-3 mb-4">
             <div class="col-6 col-md-4">
-                <div class="info-box">
-                    <span>Nível</span>
-                    <strong th:text="${character.level != null ? character.level : '-'}">1</strong>
+                <div class="stat-pill sp-level">
+                    <span class="stat-pill-label">Nível</span>
+                    <strong class="stat-pill-value" th:text="${character.level != null ? character.level : '-'}">1</strong>
                 </div>
             </div>
 
             <div class="col-6 col-md-4">
-                <div class="info-box">
-                    <span>Proficiência</span>
-                    <strong th:text="${character.formattedProficiencyBonus}">+2</strong>
+                <div class="stat-pill sp-prof">
+                    <span class="stat-pill-label">Proficiência</span>
+                    <strong class="stat-pill-value" th:text="${character.formattedProficiencyBonus}">+2</strong>
                 </div>
             </div>
 
             <div class="col-12 col-md-4">
-                <div class="info-box">
-                    <span>Classe de Armadura</span>
-                    <strong th:text="${character.armorClass != null ? character.armorClass : '-'}">15</strong>
+                <div class="stat-pill sp-ac">
+                    <span class="stat-pill-label">Classe de Armadura</span>
+                    <strong class="stat-pill-value" th:text="${character.armorClass != null ? character.armorClass : '-'}">15</strong>
                 </div>
             </div>
         </div>
@@ -198,7 +293,9 @@
             </a>
         </div>
     </section>
+    </div><!-- /tab-overview -->
 
+    <div class="tab-pane fade" id="tab-inventory" role="tabpanel" aria-labelledby="tab-inventory-btn">
     <section class="sheet-card mb-4">
         <div class="mb-4">
             <h2 class="fw-bold mb-1">Inventário</h2>
@@ -236,7 +333,7 @@
 
         <div class="row g-3" th:if="${!#lists.isEmpty(items)}">
             <div class="col-md-6 col-lg-4" th:each="item : ${items}">
-                <div class="mini-card h-100">
+                <div class="mini-card item-card h-100">
                     <div class="d-flex justify-content-between gap-3">
                         <div>
                             <h5 class="fw-bold mb-1" th:text="${item.name}">Nome do item</h5>
@@ -290,7 +387,9 @@
             </div>
         </div>
     </section>
+    </div><!-- /tab-inventory -->
 
+    <div class="tab-pane fade" id="tab-spells" role="tabpanel" aria-labelledby="tab-spells-btn">
     <section class="sheet-card mb-4">
         <div class="mb-4">
             <h2 class="fw-bold mb-1">Espaços de Magia</h2>
@@ -339,7 +438,7 @@
 
         <div class="row g-3" th:if="${!#lists.isEmpty(spellSlots)}">
             <div class="col-md-4 col-lg-3" th:each="slot : ${spellSlots}">
-                <div class="spell-slot-card">
+                <div class="spell-slot-card" th:attr="data-circle=${slot.spellCircle} + 'º'">
                     <div class="d-flex justify-content-between align-items-start gap-2">
                         <div>
                             <h5 class="fw-bold mb-1">
@@ -420,17 +519,17 @@
         </div>
 
         <div class="spellcasting-summary mb-4">
-            <div class="spellcasting-box">
+            <div class="spellcasting-box sc-ability">
                 <span>Atributo de Conjuração</span>
                 <strong th:text="${character.spellcastingAbilityLabel}">Carisma</strong>
             </div>
 
-            <div class="spellcasting-box">
+            <div class="spellcasting-box sc-attack">
                 <span>Ataque com Magia</span>
                 <strong th:text="${character.formattedSpellAttackBonus}">+5</strong>
             </div>
 
-            <div class="spellcasting-box">
+            <div class="spellcasting-box sc-dc">
                 <span>DT de Resistência</span>
                 <strong th:text="${character.spellSaveDc}">13</strong>
             </div>
@@ -683,10 +782,226 @@
             </ul>
         </div>
     </section>
+    </div><!-- /tab-spells -->
+
+    <div class="tab-pane fade" id="tab-abilities" role="tabpanel" aria-labelledby="tab-abilities-btn">
+    <section class="sheet-card mb-4">
+        <div class="mb-4">
+            <h2 class="fw-bold mb-1">Habilidades</h2>
+            <p class="text-muted mb-0">Habilidades raciais, de classe, talentos e poderes especiais.</p>
+        </div>
+
+        <form class="mb-4" th:action="@{/characters/{id}/abilities/save(id=${character.id})}" method="post" th:object="${newAbility}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Nome</label>
+                    <input type="text" th:field="*{name}" class="form-control" placeholder="Ex: Fúria" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Tipo</label>
+                    <select th:field="*{abilityType}" class="form-select">
+                        <option value="">Selecione</option>
+                        <option value="Racial">Racial</option>
+                        <option value="Classe">Classe</option>
+                        <option value="Talento">Talento</option>
+                        <option value="Passiva">Passiva</option>
+                        <option value="Ativa">Ativa</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Usos atuais</label>
+                    <input type="number" th:field="*{uses}" class="form-control" min="0" placeholder="0">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Usos máx.</label>
+                    <input type="number" th:field="*{maxUses}" class="form-control" min="0" placeholder="0">
+                </div>
+
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-warning w-100 fw-semibold">+</button>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Descrição</label>
+                    <textarea th:field="*{description}" class="form-control" rows="2" placeholder="Como a habilidade funciona, gatilhos, custos, etc."></textarea>
+                </div>
+            </div>
+        </form>
+
+        <div th:if="${#lists.isEmpty(abilities)}" class="empty-mini">
+            Nenhuma habilidade cadastrada.
+        </div>
+
+        <div class="row g-3" th:if="${!#lists.isEmpty(abilities)}">
+            <div class="col-md-6" th:each="ability : ${abilities}">
+                <div class="mini-card ability-card h-100" th:attr="data-ability-id=${ability.id}">
+                    <div class="d-flex justify-content-between gap-3 flex-wrap">
+                        <div>
+                            <h5 class="fw-bold mb-1" th:text="${ability.name}">Nome da habilidade</h5>
+                            <span class="badge text-bg-warning mb-1"
+                                  th:if="${ability.abilityType != null && ability.abilityType != ''}"
+                                  th:text="${ability.abilityType}">Tipo</span>
+                            <div th:if="${ability.maxUses != null && ability.maxUses > 0}" class="mt-1">
+                                <span class="badge text-bg-dark">
+                                    Usos:
+                                    <strong class="ability-uses-value"
+                                            th:text="${ability.uses != null ? ability.uses : 0}">0</strong>
+                                    /
+                                    <strong class="ability-max-value"
+                                            th:text="${ability.maxUses}">0</strong>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button"
+                                    th:if="${ability.maxUses != null && ability.maxUses > 0}"
+                                    class="btn btn-sm btn-outline-secondary ability-use-btn"
+                                    th:attr="data-character-id=${character.id}, data-ability-id=${ability.id}, data-delta=-1">
+                                -1 uso
+                            </button>
+                            <button type="button"
+                                    th:if="${ability.maxUses != null && ability.maxUses > 0}"
+                                    class="btn btn-sm btn-outline-secondary ability-use-btn"
+                                    th:attr="data-character-id=${character.id}, data-ability-id=${ability.id}, data-delta=1">
+                                +1 uso
+                            </button>
+
+                            <button class="btn btn-sm btn-outline-warning"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    th:data-bs-target="'#editAbility' + ${ability.id}">
+                                Editar
+                            </button>
+
+                            <a th:href="@{/characters/{cid}/abilities/delete/{aid}(cid=${character.id}, aid=${ability.id})}"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Deseja excluir esta habilidade?')">
+                                Excluir
+                            </a>
+                        </div>
+                    </div>
+
+                    <p class="text-muted mt-3 mb-0 preserve-lines"
+                       th:text="${ability.description != null && ability.description != '' ? ability.description : 'Sem descrição.'}">
+                        Descrição da habilidade.
+                    </p>
+
+                    <div class="collapse mt-3" th:id="'editAbility' + ${ability.id}">
+                        <form th:action="@{/characters/{cid}/abilities/update/{aid}(cid=${character.id}, aid=${ability.id})}" method="post">
+                            <div class="row g-2">
+                                <div class="col-md-5">
+                                    <label class="form-label">Nome</label>
+                                    <input type="text" name="name" class="form-control" th:value="${ability.name}" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Tipo</label>
+                                    <select name="abilityType" class="form-select">
+                                        <option value="" th:selected="${ability.abilityType == null || ability.abilityType == ''}">—</option>
+                                        <option value="Racial" th:selected="${ability.abilityType == 'Racial'}">Racial</option>
+                                        <option value="Classe" th:selected="${ability.abilityType == 'Classe'}">Classe</option>
+                                        <option value="Talento" th:selected="${ability.abilityType == 'Talento'}">Talento</option>
+                                        <option value="Passiva" th:selected="${ability.abilityType == 'Passiva'}">Passiva</option>
+                                        <option value="Ativa" th:selected="${ability.abilityType == 'Ativa'}">Ativa</option>
+                                        <option value="Outro" th:selected="${ability.abilityType == 'Outro'}">Outro</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Usos</label>
+                                    <input type="number" name="uses" class="form-control" th:value="${ability.uses}" min="0">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Máx.</label>
+                                    <input type="number" name="maxUses" class="form-control" th:value="${ability.maxUses}" min="0">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Descrição</label>
+                                    <textarea name="description" class="form-control" rows="3" th:text="${ability.description}"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-warning btn-sm fw-semibold">
+                                        Salvar alterações
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div><!-- /tab-abilities -->
+
+    </div><!-- /tab-content -->
 
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+    // Persistência da aba ativa por personagem (sobrevive a recarregamentos após edit/delete/add)
+    (function () {
+        const characterId = /*[[${character.id}]]*/ 0;
+        const STORAGE_KEY = 'sheet-active-tab-' + characterId;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const btn = document.querySelector('#sheetTabs button[data-bs-target="' + saved + '"]');
+                if (btn && window.bootstrap) {
+                    bootstrap.Tab.getOrCreateInstance(btn).show();
+                }
+            }
+
+            document.querySelectorAll('#sheetTabs button[data-bs-toggle="pill"]').forEach(function (btn) {
+                btn.addEventListener('shown.bs.tab', function (e) {
+                    const target = e.target.getAttribute('data-bs-target');
+                    if (target) localStorage.setItem(STORAGE_KEY, target);
+                });
+            });
+        });
+    })();
+
+    // Ajuste de usos de habilidades sem recarregar a página
+    document.addEventListener('click', function (event) {
+        const btn = event.target.closest('.ability-use-btn');
+        if (!btn) return;
+
+        event.preventDefault();
+
+        const characterId = btn.getAttribute('data-character-id');
+        const abilityId = btn.getAttribute('data-ability-id');
+        const delta = btn.getAttribute('data-delta');
+
+        btn.disabled = true;
+
+        fetch(`/characters/${characterId}/abilities/${abilityId}/uses/adjust.json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'delta=' + encodeURIComponent(delta)
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error('Falha na atualização');
+            return res.json();
+        })
+        .then(function (data) {
+            const card = document.querySelector('.ability-card[data-ability-id="' + data.id + '"]');
+            if (!card) return;
+            const usesEl = card.querySelector('.ability-uses-value');
+            if (usesEl) usesEl.textContent = data.uses;
+        })
+        .catch(function () {
+            alert('Não foi possível atualizar os usos.');
+        })
+        .finally(function () {
+            btn.disabled = false;
+        });
+    });
+</script>
 
 </body>
 </html>

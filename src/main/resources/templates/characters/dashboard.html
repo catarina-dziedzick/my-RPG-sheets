@@ -56,10 +56,13 @@
                     </div>
 
                     <div class="dashboard-hp mb-3"
-                         th:with="hp=${character.hitPoints != null ? character.hitPoints : 0}, hpPercent=${hp > 100 ? 100 : (hp < 0 ? 0 : hp)}">
+                         th:with="hp=${character.hitPoints != null ? character.hitPoints : 0},
+                                  maxHp=${character.maxHitPoints != null ? character.maxHitPoints : 0},
+                                  hpPercent=${character.hpPercent}">
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted fw-semibold">Vida</small>
-                            <small class="fw-semibold" th:text="${hp} + '/100'">10/100</small>
+                            <small class="fw-semibold"
+                                   th:text="${hp} + '/' + (${maxHp} > 0 ? ${maxHp} : '—')">10/10</small>
                         </div>
                         <div class="hp-track hp-track-sm mt-1">
                             <div class="hp-fill"
@@ -69,20 +72,38 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between bg-light rounded-3 p-3 mb-3">
-                        <div>
-                            <small class="text-muted">Nível</small>
-                            <div class="fw-bold" th:text="${character.level != null ? character.level : '-'}">1</div>
+                    <div class="dashboard-stats mb-3">
+                        <div class="stat-pill stat-pill-sm sp-level">
+                            <span class="stat-pill-label">Nível</span>
+                            <strong class="stat-pill-value" th:text="${character.level != null ? character.level : '-'}">1</strong>
                         </div>
 
-                        <div>
-                            <small class="text-muted">PV</small>
-                            <div class="fw-bold" th:text="${character.hitPoints != null ? character.hitPoints : '-'}">10</div>
+                        <div class="stat-pill stat-pill-sm sp-hp">
+                            <span class="stat-pill-label">PV</span>
+                            <strong class="stat-pill-value stat-pill-value-sm"
+                                    th:text="${(character.hitPoints != null ? character.hitPoints : '-') + ' / ' + (character.maxHitPoints != null ? character.maxHitPoints : '—')}">10/10</strong>
                         </div>
 
-                        <div>
-                            <small class="text-muted">CA</small>
-                            <div class="fw-bold" th:text="${character.armorClass != null ? character.armorClass : '-'}">15</div>
+                        <div class="stat-pill stat-pill-sm sp-ac">
+                            <span class="stat-pill-label">CA</span>
+                            <strong class="stat-pill-value" th:text="${character.armorClass != null ? character.armorClass : '-'}">15</strong>
+                        </div>
+                    </div>
+
+                    <!-- Barra de XP minimalista -->
+                    <div class="dashboard-xp mb-3"
+                         th:with="pct=${character.xpProgressPercent},
+                                  maxLvl=${character.maxLevel},
+                                  into=${character.xpIntoCurrentLevel},
+                                  need=${character.xpNeededForNextLevel}">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="dashboard-xp-label">XP</span>
+                            <span class="dashboard-xp-info" th:if="${!maxLvl}"
+                                  th:text="${into} + ' / ' + ${need}">0 / 300</span>
+                            <span class="dashboard-xp-info" th:if="${maxLvl}">Nível máximo</span>
+                        </div>
+                        <div class="dashboard-xp-track">
+                            <div class="dashboard-xp-fill" th:style="'width:' + ${pct} + '%'"></div>
                         </div>
                     </div>
 

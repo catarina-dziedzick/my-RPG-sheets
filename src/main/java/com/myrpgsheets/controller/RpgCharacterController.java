@@ -1,6 +1,7 @@
 package com.myrpgsheets.controller;
 
 import com.myrpgsheets.model.*;
+import com.myrpgsheets.service.CharacterAbilityService;
 import com.myrpgsheets.service.CharacterSpellService;
 import com.myrpgsheets.service.InventoryItemService;
 import com.myrpgsheets.service.RpgCharacterService;
@@ -31,17 +32,20 @@ public class RpgCharacterController {
     private final InventoryItemService inventoryItemService;
     private final CharacterSpellService characterSpellService;
     private final SpellSlotService spellSlotService;
+    private final CharacterAbilityService characterAbilityService;
 
     public RpgCharacterController(
             RpgCharacterService rpgCharacterService,
             InventoryItemService inventoryItemService,
             CharacterSpellService characterSpellService,
-            SpellSlotService spellSlotService)
+            SpellSlotService spellSlotService,
+            CharacterAbilityService characterAbilityService)
     {
         this.rpgCharacterService = rpgCharacterService;
         this.inventoryItemService = inventoryItemService;
         this.characterSpellService = characterSpellService;
         this.spellSlotService = spellSlotService;
+        this.characterAbilityService = characterAbilityService;
     }
 
     @GetMapping
@@ -109,6 +113,14 @@ public class RpgCharacterController {
         }
 
         handleAvatarUpload(characterToSave, avatarFile);
+
+        // normaliza HP atual se ultrapassar o máximo
+        Integer maxHp = characterToSave.getMaxHitPoints();
+        Integer curHp = characterToSave.getHitPoints();
+        if (maxHp != null && maxHp > 0 && curHp != null && curHp > maxHp) {
+            characterToSave.setHitPoints(maxHp);
+        }
+
         rpgCharacterService.save(characterToSave);
 
         return "redirect:/characters";
@@ -225,6 +237,9 @@ public class RpgCharacterController {
         model.addAttribute("newSpell", new CharacterSpell());
         model.addAttribute("newSpellSlot", new SpellSlot());
 
+        model.addAttribute("abilities", characterAbilityService.findByCharacter(character));
+        model.addAttribute("newAbility", new CharacterAbility());
+
         return "characters/view";
     }
 
@@ -291,6 +306,7 @@ public class RpgCharacterController {
 
         int currentHitPoints = character.getHitPoints() == null ? 0 : character.getHitPoints();
         int updatedHitPoints = Math.max(0, currentHitPoints + delta);
+        updatedHitPoints = clampHp(character, updatedHitPoints);
 
         character.setHitPoints(updatedHitPoints);
         rpgCharacterService.save(character);
@@ -323,10 +339,110 @@ public class RpgCharacterController {
         }
 
         int normalizedHitPoints = hitPoints == null ? 0 : Math.max(0, hitPoints);
+        normalizedHitPoints = clampHp(character, normalizedHitPoints);
 
         character.setHitPoints(normalizedHitPoints);
         rpgCharacterService.save(character);
 
+        return "redirect:/characters/view/" + characterId;
+    }
+
+    @PostMapping("/{characterId}/xp/adjust")
+    public String adjustXp(
+            @PathVariable Long characterId,
+            @RequestParam Integer delta,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+
+        if (characterOptional.isEmpty()) {
+            return "redirect:/characters";
+        }
+
+        RpgCharacter character = characterOptional.get();
+
+        if (!character.getUser().getId().equals(user.getId())) {
+            return "redirect:/characters";
+        }
+
+        int current = character.getExperiencePoints() == null ? 0 : character.getExperiencePoints();
+        int updated = current + (delta == null ? 0 : delta);
+        character.setExperiencePoints(clampXp(character, updated));
+        rpgCharacterService.save(character);
+
+        return "redirect:/characters/view/" + characterId;
+    }
+
+    @PostMapping("/{characterId}/xp/set")
+    public String setXp(
+            @PathVariable Long characterId,
+            @RequestParam Integer experiencePoints,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+
+        if (characterOptional.isEmpty()) {
+            return "redirect:/characters";
+        }
+
+        RpgCharacter character = characterOptional.get();
+
+        if (!character.getUser().getId().equals(user.getId())) {
+            return "redirect:/characters";
+        }
+
+        int value = experiencePoints == null ? 0 : experiencePoints;
+        character.setExperiencePoints(clampXp(character, value));
+        rpgCharacterService.save(character);
+
+        return "redirect:/characters/view/" + characterId;
+    }
+
+    private int clampXp(RpgCharacter character, int value) {
+        int min = character.getCurrentLevelXp();
+        int max = character.getMaxAllowedXp();
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
+    }
+
+    private int clampHp(RpgCharacter character, int value) {
+        int max = character.getMaxHitPoints() == null ? 0 : character.getMaxHitPoints();
+        if (max <= 0) return value; // sem máximo definido, não limita
+        if (value > max) return max;
+        return value;
+    }
+
+    @PostMapping("/{characterId}/temp-hp/set")
+    public String setTempHp(
+            @PathVariable Long characterId,
+            @RequestParam Integer temporaryHitPoints,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+        if (user == null) return "redirect:/login";
+
+        Optional<RpgCharacter> opt = rpgCharacterService.findById(characterId);
+        if (opt.isEmpty()) return "redirect:/characters";
+
+        RpgCharacter character = opt.get();
+        if (!character.getUser().getId().equals(user.getId())) return "redirect:/characters";
+
+        int val = temporaryHitPoints == null ? 0 : Math.max(0, temporaryHitPoints);
+        character.setTemporaryHitPoints(val);
+        rpgCharacterService.save(character);
         return "redirect:/characters/view/" + characterId;
     }
 
@@ -752,12 +868,203 @@ public class RpgCharacterController {
         return "redirect:/characters/view/" + characterId;
     }
 
+    @PostMapping("/{characterId}/abilities/save")
+    public String saveAbility(
+            @PathVariable Long characterId,
+            @ModelAttribute CharacterAbility ability,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+
+        if (characterOptional.isEmpty()) {
+            return "redirect:/characters";
+        }
+
+        RpgCharacter character = characterOptional.get();
+
+        if (!character.getUser().getId().equals(user.getId())) {
+            return "redirect:/characters";
+        }
+
+        ability.setCharacter(character);
+        normalizeAbilityUses(ability);
+        characterAbilityService.save(ability);
+
+        return "redirect:/characters/view/" + characterId;
+    }
+
+    @PostMapping("/{characterId}/abilities/update/{abilityId}")
+    public String updateAbility(
+            @PathVariable Long characterId,
+            @PathVariable Long abilityId,
+            @ModelAttribute CharacterAbility updatedAbility,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+        Optional<CharacterAbility> abilityOptional = characterAbilityService.findById(abilityId);
+
+        if (characterOptional.isEmpty() || abilityOptional.isEmpty()) {
+            return "redirect:/characters";
+        }
+
+        RpgCharacter character = characterOptional.get();
+        CharacterAbility ability = abilityOptional.get();
+
+        if (!character.getUser().getId().equals(user.getId())) {
+            return "redirect:/characters";
+        }
+
+        if (!ability.getCharacter().getId().equals(character.getId())) {
+            return "redirect:/characters/view/" + characterId;
+        }
+
+        ability.setName(updatedAbility.getName());
+        ability.setAbilityType(updatedAbility.getAbilityType());
+        ability.setUses(updatedAbility.getUses());
+        ability.setMaxUses(updatedAbility.getMaxUses());
+        ability.setDescription(updatedAbility.getDescription());
+        normalizeAbilityUses(ability);
+
+        characterAbilityService.save(ability);
+
+        return "redirect:/characters/view/" + characterId;
+    }
+
+    @GetMapping("/{characterId}/abilities/delete/{abilityId}")
+    public String deleteAbility(
+            @PathVariable Long characterId,
+            @PathVariable Long abilityId,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        characterAbilityService.delete(abilityId);
+
+        return "redirect:/characters/view/" + characterId;
+    }
+
+    @PostMapping("/{characterId}/abilities/{abilityId}/uses/adjust")
+    public String adjustAbilityUses(
+            @PathVariable Long characterId,
+            @PathVariable Long abilityId,
+            @RequestParam Integer delta,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+        Optional<CharacterAbility> abilityOptional = characterAbilityService.findById(abilityId);
+
+        if (characterOptional.isEmpty() || abilityOptional.isEmpty()) {
+            return "redirect:/characters";
+        }
+
+        RpgCharacter character = characterOptional.get();
+        CharacterAbility ability = abilityOptional.get();
+
+        if (!character.getUser().getId().equals(user.getId())
+                || !ability.getCharacter().getId().equals(character.getId())) {
+            return "redirect:/characters/view/" + characterId;
+        }
+
+        int current = ability.getUses() == null ? 0 : ability.getUses();
+        int updated = current + (delta == null ? 0 : delta);
+        ability.setUses(updated);
+        normalizeAbilityUses(ability);
+
+        characterAbilityService.save(ability);
+
+        return "redirect:/characters/view/" + characterId;
+    }
+
+    @PostMapping("/{characterId}/abilities/{abilityId}/uses/adjust.json")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> adjustAbilityUsesJson(
+            @PathVariable Long characterId,
+            @PathVariable Long abilityId,
+            @RequestParam Integer delta,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+        Optional<CharacterAbility> abilityOptional = characterAbilityService.findById(abilityId);
+
+        if (characterOptional.isEmpty() || abilityOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        RpgCharacter character = characterOptional.get();
+        CharacterAbility ability = abilityOptional.get();
+
+        if (!character.getUser().getId().equals(user.getId())
+                || !ability.getCharacter().getId().equals(character.getId())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        int current = ability.getUses() == null ? 0 : ability.getUses();
+        int updated = current + (delta == null ? 0 : delta);
+        ability.setUses(updated);
+        normalizeAbilityUses(ability);
+
+        characterAbilityService.save(ability);
+
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("id", ability.getId());
+        body.put("uses", ability.getUses() == null ? 0 : ability.getUses());
+        body.put("maxUses", ability.getMaxUses() == null ? 0 : ability.getMaxUses());
+        return ResponseEntity.ok(body);
+    }
+
+    private void normalizeAbilityUses(CharacterAbility ability) {
+        if (ability.getMaxUses() != null && ability.getMaxUses() < 0) {
+            ability.setMaxUses(0);
+        }
+
+        if (ability.getUses() != null && ability.getUses() < 0) {
+            ability.setUses(0);
+        }
+
+        if (ability.getMaxUses() != null
+                && ability.getUses() != null
+                && ability.getUses() > ability.getMaxUses()) {
+            ability.setUses(ability.getMaxUses());
+        }
+    }
+
     private void copyEditableFields(RpgCharacter source, RpgCharacter target) {
         target.setName(source.getName());
         target.setRace(source.getRace());
         target.setCharacterClass(source.getCharacterClass());
         target.setLevel(source.getLevel());
+        target.setExperiencePoints(source.getExperiencePoints());
         target.setHitPoints(source.getHitPoints());
+        target.setMaxHitPoints(source.getMaxHitPoints());
+        target.setTemporaryHitPoints(source.getTemporaryHitPoints());
         target.setArmorClass(source.getArmorClass());
         target.setStrength(source.getStrength());
         target.setDexterity(source.getDexterity());
