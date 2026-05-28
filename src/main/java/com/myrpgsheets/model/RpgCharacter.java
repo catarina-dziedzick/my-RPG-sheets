@@ -147,6 +147,30 @@ public class RpgCharacter {
         return formatBonus(getSpellAttackBonus());
     }
 
+    public String getFormattedStrengthModifier() {
+        return formatAbilityModifier(strength);
+    }
+
+    public String getFormattedDexterityModifier() {
+        return formatAbilityModifier(dexterity);
+    }
+
+    public String getFormattedConstitutionModifier() {
+        return formatAbilityModifier(constitution);
+    }
+
+    public String getFormattedIntelligenceModifier() {
+        return formatAbilityModifier(intelligence);
+    }
+
+    public String getFormattedWisdomModifier() {
+        return formatAbilityModifier(wisdom);
+    }
+
+    public String getFormattedCharismaModifier() {
+        return formatAbilityModifier(charisma);
+    }
+
     public boolean hasAvatar() {
         return avatarData != null && avatarData.length > 0;
     }
@@ -161,5 +185,9 @@ public class RpgCharacter {
         }
 
         return value.toString();
+    }
+
+    private String formatAbilityModifier(Integer abilityScore) {
+        return formatBonus(getAbilityModifier(abilityScore));
     }
 }

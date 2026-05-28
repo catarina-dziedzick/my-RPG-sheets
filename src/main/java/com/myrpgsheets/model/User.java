@@ -28,6 +28,10 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @NotBlank(message = "Username is required.")
+    @Column(name = "user_name", unique = true)
+    private String userName;
+
     @NotBlank(message = "Password is required.")
     private String password;
 }

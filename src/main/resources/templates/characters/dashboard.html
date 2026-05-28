@@ -55,6 +55,20 @@
                         </div>
                     </div>
 
+                    <div class="dashboard-hp mb-3"
+                         th:with="hp=${character.hitPoints != null ? character.hitPoints : 0}, hpPercent=${hp > 100 ? 100 : (hp < 0 ? 0 : hp)}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted fw-semibold">Vida</small>
+                            <small class="fw-semibold" th:text="${hp} + '/100'">10/100</small>
+                        </div>
+                        <div class="hp-track hp-track-sm mt-1">
+                            <div class="hp-fill"
+                                 th:classappend="${hpPercent <= 30 ? ' hp-fill-low' : (hpPercent <= 60 ? ' hp-fill-mid' : ' hp-fill-high')}"
+                                 th:style="'width:' + ${hpPercent} + '%'">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-between bg-light rounded-3 p-3 mb-3">
                         <div>
                             <small class="text-muted">Nível</small>

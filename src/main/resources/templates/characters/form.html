@@ -112,31 +112,37 @@
                 <div class="col-6 col-md-2">
                     <label class="form-label">Força</label>
                     <input type="number" th:field="*{strength}" class="form-control form-control-lg">
+                    <small class="attribute-modifier" data-ability-modifier-for="strength" th:text="${'Mod: ' + character.formattedStrengthModifier}">Mod: +0</small>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label class="form-label">Destreza</label>
                     <input type="number" th:field="*{dexterity}" class="form-control form-control-lg">
+                    <small class="attribute-modifier" data-ability-modifier-for="dexterity" th:text="${'Mod: ' + character.formattedDexterityModifier}">Mod: +0</small>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label class="form-label">Constituição</label>
                     <input type="number" th:field="*{constitution}" class="form-control form-control-lg">
+                    <small class="attribute-modifier" data-ability-modifier-for="constitution" th:text="${'Mod: ' + character.formattedConstitutionModifier}">Mod: +0</small>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label class="form-label">Inteligência</label>
                     <input type="number" th:field="*{intelligence}" class="form-control form-control-lg">
+                    <small class="attribute-modifier" data-ability-modifier-for="intelligence" th:text="${'Mod: ' + character.formattedIntelligenceModifier}">Mod: +0</small>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label class="form-label">Sabedoria</label>
                     <input type="number" th:field="*{wisdom}" class="form-control form-control-lg">
+                    <small class="attribute-modifier" data-ability-modifier-for="wisdom" th:text="${'Mod: ' + character.formattedWisdomModifier}">Mod: +0</small>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label class="form-label">Carisma</label>
                     <input type="number" th:field="*{charisma}" class="form-control form-control-lg">
+                    <small class="attribute-modifier" data-ability-modifier-for="charisma" th:text="${'Mod: ' + character.formattedCharismaModifier}">Mod: +0</small>
                 </div>
             </div>
 
@@ -164,6 +170,39 @@
         </form>
     </div>
 </main>
+
+<script>
+    (function () {
+        function calculateModifier(score) {
+            if (!Number.isFinite(score)) {
+                score = 10;
+            }
+
+            return Math.floor((score - 10) / 2);
+        }
+
+        function formatModifier(modifier) {
+            return modifier >= 0 ? "+" + modifier : String(modifier);
+        }
+
+        ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"].forEach(function (ability) {
+            var input = document.getElementById(ability);
+            var badge = document.querySelector('[data-ability-modifier-for="' + ability + '"]');
+
+            if (!input || !badge) {
+                return;
+            }
+
+            function refreshModifier() {
+                var parsed = parseInt(input.value, 10);
+                badge.textContent = "Mod: " + formatModifier(calculateModifier(parsed));
+            }
+
+            input.addEventListener("input", refreshModifier);
+            refreshModifier();
+        });
+    })();
+</script>
 
 </body>
 </html>

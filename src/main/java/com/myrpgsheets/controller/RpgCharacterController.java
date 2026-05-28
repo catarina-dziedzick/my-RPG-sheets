@@ -12,12 +12,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 @Controller
 @RequestMapping("/characters")
@@ -194,13 +198,28 @@ public class RpgCharacterController {
         }
 
         List<CharacterSpell> spells = characterSpellService.findByCharacter(character);
+        List<SpellSlot> spellSlots = spellSlotService.findByCharacter(character);
+        Map<Integer, SpellSlot> spellSlotsByCircle = new TreeMap<>();
+
+        for (SpellSlot slot : spellSlots) {
+            Integer circle = slot.getSpellCircle();
+
+            if (circle != null && circle > 0) {
+                spellSlotsByCircle.putIfAbsent(circle, slot);
+            }
+        }
+
+        List<Integer> availableSpellCircles = new ArrayList<>(spellSlotsByCircle.keySet());
+        List<SpellSlot> availableSpellSlots = new ArrayList<>(spellSlotsByCircle.values());
 
         model.addAttribute("character", character);
         model.addAttribute("items", inventoryItemService.findByCharacter(character));
-        model.addAttribute("spellSlots", spellSlotService.findByCharacter(character));
+        model.addAttribute("spellSlots", spellSlots);
+        model.addAttribute("spellSlotsByCircle", spellSlotsByCircle);
+        model.addAttribute("availableSpellSlots", availableSpellSlots);
 
         model.addAttribute("spells", spells);
-        model.addAttribute("circles", List.of(1, 2, 3, 4, 5, 6, 7, 8, 9));
+        model.addAttribute("availableSpellCircles", availableSpellCircles);
 
         model.addAttribute("newItem", new InventoryItem());
         model.addAttribute("newSpell", new CharacterSpell());
@@ -279,6 +298,38 @@ public class RpgCharacterController {
         return "redirect:/characters/view/" + characterId;
     }
 
+    @PostMapping("/{characterId}/hit-points/set")
+    public String setHitPoints(
+            @PathVariable Long characterId,
+            @RequestParam Integer hitPoints,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+
+        if (characterOptional.isEmpty()) {
+            return "redirect:/characters";
+        }
+
+        RpgCharacter character = characterOptional.get();
+
+        if (!character.getUser().getId().equals(user.getId())) {
+            return "redirect:/characters";
+        }
+
+        int normalizedHitPoints = hitPoints == null ? 0 : Math.max(0, hitPoints);
+
+        character.setHitPoints(normalizedHitPoints);
+        rpgCharacterService.save(character);
+
+        return "redirect:/characters/view/" + characterId;
+    }
+
     @PostMapping("/{characterId}/spell-slots/use")
     public String useSpellSlot(
             @PathVariable Long characterId,
@@ -315,6 +366,56 @@ public class RpgCharacterController {
                 spellSlotService.save(slot);
             }
         }
+
+        return "redirect:/characters/view/" + characterId;
+    }
+
+    @PostMapping("/{characterId}/spell-slots/toggle")
+    public String toggleSpellSlot(
+            @PathVariable Long characterId,
+            @RequestParam Integer spellCircle,
+            @RequestParam Integer slotIndex,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+
+        if (characterOptional.isEmpty()) {
+            return "redirect:/characters";
+        }
+
+        RpgCharacter character = characterOptional.get();
+
+        if (!character.getUser().getId().equals(user.getId())) {
+            return "redirect:/characters";
+        }
+
+        Optional<SpellSlot> slotOptional = spellSlotService.findByCharacterAndSpellCircle(character, spellCircle);
+
+        if (slotOptional.isEmpty()) {
+            return "redirect:/characters/view/" + characterId;
+        }
+
+        SpellSlot slot = slotOptional.get();
+        int total = slot.getTotalSlots() == null ? 0 : slot.getTotalSlots();
+        int used = slot.getUsedSlots() == null ? 0 : slot.getUsedSlots();
+
+        if (slotIndex == null || slotIndex < 1 || slotIndex > total) {
+            return "redirect:/characters/view/" + characterId;
+        }
+
+        if (slotIndex <= used) {
+            slot.setUsedSlots(slotIndex - 1);
+        } else {
+            slot.setUsedSlots(slotIndex);
+        }
+
+        spellSlotService.save(slot);
 
         return "redirect:/characters/view/" + characterId;
     }
@@ -358,6 +459,7 @@ public class RpgCharacterController {
     public String saveSpell(
             @PathVariable Long characterId,
             @ModelAttribute CharacterSpell spell,
+            RedirectAttributes redirectAttributes,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -386,6 +488,16 @@ public class RpgCharacterController {
 
         if (Boolean.TRUE.equals(spell.getCantrip())) {
             spell.setSpellCircle(0);
+        } else {
+            if (spell.getSpellCircle() == null || spell.getSpellCircle() < 1) {
+                redirectAttributes.addFlashAttribute("spellError", "Selecione um circulo valido ou marque como truque.");
+                return "redirect:/characters/view/" + characterId;
+            }
+
+            if (!hasSpellSlotForCircle(character, spell.getSpellCircle())) {
+                redirectAttributes.addFlashAttribute("spellError", "Cadastre o espaco desse circulo antes de adicionar a magia.");
+                return "redirect:/characters/view/" + characterId;
+            }
         }
 
         characterSpellService.save(spell);
@@ -532,6 +644,7 @@ public class RpgCharacterController {
             @PathVariable Long characterId,
             @PathVariable Long spellId,
             @ModelAttribute CharacterSpell updatedSpell,
+            RedirectAttributes redirectAttributes,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -569,6 +682,16 @@ public class RpgCharacterController {
         if (Boolean.TRUE.equals(spell.getCantrip())) {
             spell.setSpellCircle(0);
         } else {
+            if (updatedSpell.getSpellCircle() == null || updatedSpell.getSpellCircle() < 1) {
+                redirectAttributes.addFlashAttribute("spellError", "Selecione um circulo valido ou marque como truque.");
+                return "redirect:/characters/view/" + characterId;
+            }
+
+            if (!hasSpellSlotForCircle(character, updatedSpell.getSpellCircle())) {
+                redirectAttributes.addFlashAttribute("spellError", "Cadastre o espaco desse circulo antes de salvar a magia.");
+                return "redirect:/characters/view/" + characterId;
+            }
+
             spell.setSpellCircle(updatedSpell.getSpellCircle());
         }
 
@@ -663,5 +786,11 @@ public class RpgCharacterController {
         } catch (IOException ignored) {
             // Ignore upload read failures and keep current avatar unchanged.
         }
+    }
+
+    private boolean hasSpellSlotForCircle(RpgCharacter character, Integer spellCircle) {
+        return spellCircle != null
+                && spellCircle > 0
+                && spellSlotService.findByCharacterAndSpellCircle(character, spellCircle).isPresent();
     }
 }

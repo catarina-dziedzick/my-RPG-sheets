@@ -52,19 +52,19 @@ public class AuthController {
 
     @PostMapping("/login")
     public String authenticate(
-            @RequestParam String email,
+            @RequestParam String identifier,
             @RequestParam String password,
             HttpSession session,
             Model model
     ) {
-        Optional<User> userOptional = userService.authenticate(email, password);
+        Optional<User> userOptional = userService.authenticate(identifier, password);
 
         if (userOptional.isPresent()) {
             session.setAttribute("loggedUser", userOptional.get());
             return "redirect:/characters";
         }
 
-        model.addAttribute("error", "Invalid email or password.");
+        model.addAttribute("error", "Invalid email/username or password.");
         return "login";
     }
 

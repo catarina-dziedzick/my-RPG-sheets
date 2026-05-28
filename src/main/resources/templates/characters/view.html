@@ -43,29 +43,71 @@
             </div>
         </div>
 
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="info-box hp-box"
+                     th:with="hp=${character.hitPoints != null ? character.hitPoints : 0}, hpPercent=${hp > 100 ? 100 : (hp < 0 ? 0 : hp)}">
+                    <span>Pontos de Vida</span>
+                    <strong th:text="${hp}">10</strong>
+
+                    <div class="hp-track mt-2">
+                        <div class="hp-fill"
+                             th:classappend="${hpPercent <= 30 ? ' hp-fill-low' : (hpPercent <= 60 ? ' hp-fill-mid' : ' hp-fill-high')}"
+                             th:style="'width:' + ${hpPercent} + '%'">
+                        </div>
+                    </div>
+
+                    <small class="hp-caption" th:text="${hp} + '/100 (escala visual)'"></small>
+
+                    <div class="hp-actions mt-2">
+                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
+                            <input type="hidden" name="delta" value="-1">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">-1</button>
+                        </form>
+                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
+                            <input type="hidden" name="delta" value="-5">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">-5</button>
+                        </form>
+                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
+                            <input type="hidden" name="delta" value="1">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">+1</button>
+                        </form>
+                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
+                            <input type="hidden" name="delta" value="5">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">+5</button>
+                        </form>
+                    </div>
+
+                    <form class="hp-set-form mt-2"
+                          th:action="@{/characters/{id}/hit-points/set(id=${character.id})}"
+                          method="post">
+                        <input type="number"
+                               name="hitPoints"
+                               class="form-control form-control-sm hp-input"
+                               min="0"
+                               th:value="${character.hitPoints != null ? character.hitPoints : 0}">
+                        <button type="submit" class="btn btn-sm btn-warning fw-semibold hp-save-btn">Atualizar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-3 mb-4">
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-4">
                 <div class="info-box">
                     <span>Nível</span>
                     <strong th:text="${character.level != null ? character.level : '-'}">1</strong>
                 </div>
             </div>
 
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-4">
                 <div class="info-box">
                     <span>Proficiência</span>
                     <strong th:text="${character.formattedProficiencyBonus}">+2</strong>
                 </div>
             </div>
 
-            <div class="col-6 col-md-3">
-                <div class="info-box">
-                    <span>Pontos de Vida</span>
-                    <strong th:text="${character.hitPoints != null ? character.hitPoints : '-'}">10</strong>
-                </div>
-            </div>
-
-            <div class="col-6 col-md-3">
+            <div class="col-12 col-md-4">
                 <div class="info-box">
                     <span>Classe de Armadura</span>
                     <strong th:text="${character.armorClass != null ? character.armorClass : '-'}">15</strong>
@@ -81,12 +123,18 @@
                     <div class="stat-number" th:text="${character.strength != null ? character.strength : '-'}">10</div>
                     <div class="stat-label">Força</div>
                 </div>
+                <div class="stat-modifier-box">
+                    <div class="stat-modifier" th:text="${character.formattedStrengthModifier}">+0</div>
+                </div>
             </div>
 
             <div class="col-6 col-md-2">
                 <div class="stat-box">
                     <div class="stat-number" th:text="${character.dexterity != null ? character.dexterity : '-'}">10</div>
                     <div class="stat-label">Destreza</div>
+                </div>
+                <div class="stat-modifier-box">
+                    <div class="stat-modifier" th:text="${character.formattedDexterityModifier}">+0</div>
                 </div>
             </div>
 
@@ -95,12 +143,18 @@
                     <div class="stat-number" th:text="${character.constitution != null ? character.constitution : '-'}">10</div>
                     <div class="stat-label">Constituição</div>
                 </div>
+                <div class="stat-modifier-box">
+                    <div class="stat-modifier" th:text="${character.formattedConstitutionModifier}">+0</div>
+                </div>
             </div>
 
             <div class="col-6 col-md-2">
                 <div class="stat-box">
                     <div class="stat-number" th:text="${character.intelligence != null ? character.intelligence : '-'}">10</div>
                     <div class="stat-label">Inteligência</div>
+                </div>
+                <div class="stat-modifier-box">
+                    <div class="stat-modifier" th:text="${character.formattedIntelligenceModifier}">+0</div>
                 </div>
             </div>
 
@@ -109,12 +163,18 @@
                     <div class="stat-number" th:text="${character.wisdom != null ? character.wisdom : '-'}">10</div>
                     <div class="stat-label">Sabedoria</div>
                 </div>
+                <div class="stat-modifier-box">
+                    <div class="stat-modifier" th:text="${character.formattedWisdomModifier}">+0</div>
+                </div>
             </div>
 
             <div class="col-6 col-md-2">
                 <div class="stat-box">
                     <div class="stat-number" th:text="${character.charisma != null ? character.charisma : '-'}">10</div>
                     <div class="stat-label">Carisma</div>
+                </div>
+                <div class="stat-modifier-box">
+                    <div class="stat-modifier" th:text="${character.formattedCharismaModifier}">+0</div>
                 </div>
             </div>
         </div>
@@ -376,6 +436,10 @@
             </div>
         </div>
 
+        <div class="alert alert-warning" role="alert" th:if="${spellError != null}" th:text="${spellError}">
+            Cadastre o espaco de magia antes de adicionar a magia de circulo.
+        </div>
+
         <form class="mb-4" th:action="@{/characters/{id}/spells/save(id=${character.id})}" method="post" th:object="${newSpell}">
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
@@ -395,15 +459,11 @@
                     <label class="form-label">Círculo</label>
                     <select th:field="*{spellCircle}" class="form-select">
                         <option value="0">Truque</option>
-                        <option value="1">1º</option>
-                        <option value="2">2º</option>
-                        <option value="3">3º</option>
-                        <option value="4">4º</option>
-                        <option value="5">5º</option>
-                        <option value="6">6º</option>
-                        <option value="7">7º</option>
-                        <option value="8">8º</option>
-                        <option value="9">9º</option>
+                        <option th:each="circle : ${availableSpellCircles}"
+                                th:value="${circle}"
+                                th:text="${circle} + 'º'">
+                            1º
+                        </option>
                     </select>
                 </div>
 
@@ -509,15 +569,38 @@
             </ul>
         </div>
 
-        <div class="spell-list-section" th:each="circle : ${circles}">
-            <h4 class="fw-bold mt-4 mb-3">
-                <span th:text="${circle}">1</span>º Círculo
-            </h4>
+        <div th:if="${#lists.isEmpty(availableSpellCircles)}" class="empty-mini mb-3">
+            Cadastre um espaco de magia para liberar magias de circulo.
+        </div>
+
+        <div class="spell-list-section" th:each="slot : ${availableSpellSlots}">
+            <div class="spell-circle-header mt-4 mb-3">
+                <h4 class="fw-bold mb-0">
+                    <span th:text="${slot.spellCircle}">1</span>º Círculo
+                    (<span th:text="${slot != null ? (slot.usedSlots != null ? slot.usedSlots : 0) : 0}">0</span>/<span th:text="${slot != null ? (slot.totalSlots != null ? slot.totalSlots : 0) : 0}">0</span>)
+                </h4>
+
+                <div class="slot-pips" th:if="${slot != null && slot.totalSlots != null && slot.totalSlots > 0}">
+                    <form th:each="pip : ${#numbers.sequence(1, slot.totalSlots)}"
+                          th:action="@{/characters/{id}/spell-slots/toggle(id=${character.id})}"
+                          method="post"
+                          class="m-0">
+                            <input type="hidden" name="spellCircle" th:value="${slot.spellCircle}">
+                        <input type="hidden" name="slotIndex" th:value="${pip}">
+                        <button type="submit"
+                                class="slot-pip-btn"
+                                th:classappend="${(slot.usedSlots != null ? slot.usedSlots : 0) >= pip ? ' spell-slot-off' : ' spell-slot-on'}"
+                                    th:title="${'Espaco ' + pip + ' do ' + slot.spellCircle + 'o circulo'}"
+                                aria-label="Alternar uso do espaco de magia">
+                        </button>
+                    </form>
+                </div>
+            </div>
 
             <ul class="list-group spell-list">
                 <li class="list-group-item spell-list-item"
                     th:each="spell : ${spells}"
-                    th:if="${spell.spellCircle == circle && spell.cantrip != true}">
+                    th:if="${spell.spellCircle == slot.spellCircle && spell.cantrip != true}">
 
                     <div class="d-flex justify-content-between gap-3 flex-wrap">
                         <div>
