@@ -6,6 +6,7 @@ import com.myrpgsheets.repository.SpellSlotRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SpellSlotService {
@@ -18,6 +19,14 @@ public class SpellSlotService {
 
     public List<SpellSlot> findByCharacter(RpgCharacter character) {
         return spellSlotRepository.findByCharacter(character);
+    }
+
+    public Optional<SpellSlot> findById(Long id) {
+        return spellSlotRepository.findById(id);
+    }
+
+    public Optional<SpellSlot> findByCharacterAndSpellCircle(RpgCharacter character, Integer spellCircle) {
+        return spellSlotRepository.findByCharacterAndSpellCircle(character, spellCircle);
     }
 
     public SpellSlot save(SpellSlot spellSlot) {

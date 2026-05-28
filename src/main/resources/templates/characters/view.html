@@ -18,11 +18,11 @@
 </nav>
 
 <main class="container py-5">
-    <section class="sheet-card">
+    <section class="sheet-card mb-4">
         <div class="row g-4 align-items-center mb-4">
             <div class="col-md-3 text-center">
                 <img class="sheet-avatar"
-                     th:src="${character.avatarUrl != null && character.avatarUrl != '' ? character.avatarUrl : '/img/default-avatar.jpg'}"
+                     th:src="${character.hasAvatar() ? '/characters/' + character.id + '/avatar' : '/img/default-avatar.jpg'}"
                      alt="Avatar do personagem">
             </div>
 
@@ -34,11 +34,11 @@
                 </h1>
 
                 <p class="lead text-muted mb-0">
-                    <span th:text="${character.race}">Raça</span>
+                    <span th:text="${character.race != null && character.race != '' ? character.race : 'Raça não informada'}">Raça</span>
                     •
-                    <span th:text="${character.characterClass}">Classe</span>
+                    <span th:text="${character.characterClass != null && character.characterClass != '' ? character.characterClass : 'Classe não informada'}">Classe</span>
                     • Nível
-                    <span th:text="${character.level}">1</span>
+                    <span th:text="${character.level != null ? character.level : '-'}">1</span>
                 </p>
             </div>
         </div>
@@ -46,15 +46,29 @@
         <div class="row g-3 mb-4">
             <div class="col-6 col-md-3">
                 <div class="info-box">
-                    <span>Pontos de Vida</span>
-                    <strong th:text="${character.hitPoints}">10</strong>
+                    <span>Nível</span>
+                    <strong th:text="${character.level != null ? character.level : '-'}">1</strong>
                 </div>
             </div>
 
             <div class="col-6 col-md-3">
                 <div class="info-box">
-                    <span>Nível</span>
-                    <strong th:text="${character.level}">1</strong>
+                    <span>Proficiência</span>
+                    <strong th:text="${character.formattedProficiencyBonus}">+2</strong>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="info-box">
+                    <span>Pontos de Vida</span>
+                    <strong th:text="${character.hitPoints != null ? character.hitPoints : '-'}">10</strong>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="info-box">
+                    <span>Classe de Armadura</span>
+                    <strong th:text="${character.armorClass != null ? character.armorClass : '-'}">15</strong>
                 </div>
             </div>
         </div>
@@ -64,42 +78,42 @@
         <div class="row g-3 mb-4">
             <div class="col-6 col-md-2">
                 <div class="stat-box">
-                    <div class="stat-number" th:text="${character.strength}">10</div>
+                    <div class="stat-number" th:text="${character.strength != null ? character.strength : '-'}">10</div>
                     <div class="stat-label">Força</div>
                 </div>
             </div>
 
             <div class="col-6 col-md-2">
                 <div class="stat-box">
-                    <div class="stat-number" th:text="${character.dexterity}">10</div>
+                    <div class="stat-number" th:text="${character.dexterity != null ? character.dexterity : '-'}">10</div>
                     <div class="stat-label">Destreza</div>
                 </div>
             </div>
 
             <div class="col-6 col-md-2">
                 <div class="stat-box">
-                    <div class="stat-number" th:text="${character.constitution}">10</div>
+                    <div class="stat-number" th:text="${character.constitution != null ? character.constitution : '-'}">10</div>
                     <div class="stat-label">Constituição</div>
                 </div>
             </div>
 
             <div class="col-6 col-md-2">
                 <div class="stat-box">
-                    <div class="stat-number" th:text="${character.intelligence}">10</div>
+                    <div class="stat-number" th:text="${character.intelligence != null ? character.intelligence : '-'}">10</div>
                     <div class="stat-label">Inteligência</div>
                 </div>
             </div>
 
             <div class="col-6 col-md-2">
                 <div class="stat-box">
-                    <div class="stat-number" th:text="${character.wisdom}">10</div>
+                    <div class="stat-number" th:text="${character.wisdom != null ? character.wisdom : '-'}">10</div>
                     <div class="stat-label">Sabedoria</div>
                 </div>
             </div>
 
             <div class="col-6 col-md-2">
                 <div class="stat-box">
-                    <div class="stat-number" th:text="${character.charisma}">10</div>
+                    <div class="stat-number" th:text="${character.charisma != null ? character.charisma : '-'}">10</div>
                     <div class="stat-label">Carisma</div>
                 </div>
             </div>
@@ -107,8 +121,9 @@
 
         <h3 class="fw-bold mb-3">Descrição</h3>
 
-        <div class="description-box">
-            <p class="mb-0" th:text="${character.description}">
+        <div class="description-box mb-4">
+            <p class="mb-0 preserve-lines"
+               th:text="${character.description != null && character.description != '' ? character.description : 'Nenhuma descrição cadastrada.'}">
                 Descrição do personagem.
             </p>
         </div>
@@ -117,13 +132,478 @@
             <a th:href="@{/characters/edit/{id}(id=${character.id})}" class="btn btn-warning btn-lg fw-semibold">
                 Editar ficha
             </a>
+
             <a href="/characters" class="btn btn-outline-secondary btn-lg">
                 Voltar ao dashboard
             </a>
         </div>
-
     </section>
+
+    <section class="sheet-card mb-4">
+        <div class="mb-4">
+            <h2 class="fw-bold mb-1">Inventário</h2>
+            <p class="text-muted mb-0">Itens, equipamentos e recursos do personagem.</p>
+        </div>
+
+        <form class="mb-4" th:action="@{/characters/{id}/items/save(id=${character.id})}" method="post" th:object="${newItem}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Nome do item</label>
+                    <input type="text" th:field="*{name}" class="form-control" placeholder="Ex: Espada longa" required>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Quantidade</label>
+                    <input type="number" th:field="*{quantity}" class="form-control" min="1" placeholder="1">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" th:field="*{description}" class="form-control" placeholder="Detalhes do item">
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-warning w-100 fw-semibold">
+                        Adicionar
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div th:if="${#lists.isEmpty(items)}" class="empty-mini">
+            Nenhum item cadastrado.
+        </div>
+
+        <div class="row g-3" th:if="${!#lists.isEmpty(items)}">
+            <div class="col-md-6 col-lg-4" th:each="item : ${items}">
+                <div class="mini-card h-100">
+                    <div class="d-flex justify-content-between gap-3">
+                        <div>
+                            <h5 class="fw-bold mb-1" th:text="${item.name}">Nome do item</h5>
+                            <span class="badge text-bg-dark" th:text="'Qtd: ' + (${item.quantity} != null ? ${item.quantity} : 1)">Qtd: 1</span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-warning"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    th:data-bs-target="'#editItem' + ${item.id}">
+                                Editar
+                            </button>
+
+                            <a th:href="@{/characters/{characterId}/items/delete/{itemId}(characterId=${character.id}, itemId=${item.id})}"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Deseja excluir este item?')">
+                                Excluir
+                            </a>
+                        </div>
+                    </div>
+
+                    <p class="text-muted mt-3 mb-0 preserve-lines"
+                       th:text="${item.description != null && item.description != '' ? item.description : 'Sem descrição.'}">
+                        Descrição do item.
+                    </p>
+
+                    <div class="collapse mt-3" th:id="'editItem' + ${item.id}">
+                        <form th:action="@{/characters/{characterId}/items/update/{itemId}(characterId=${character.id}, itemId=${item.id})}" method="post">
+                            <div class="mb-2">
+                                <label class="form-label">Nome</label>
+                                <input type="text" name="name" class="form-control" th:value="${item.name}" required>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Quantidade</label>
+                                <input type="number" name="quantity" class="form-control" th:value="${item.quantity}" min="1">
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Descrição</label>
+                                <textarea name="description" class="form-control" rows="3" th:text="${item.description}"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-warning btn-sm fw-semibold">
+                                Salvar alterações
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="sheet-card mb-4">
+        <div class="mb-4">
+            <h2 class="fw-bold mb-1">Espaços de Magia</h2>
+            <p class="text-muted mb-0">Controle de espaços totais e usados por círculo.</p>
+        </div>
+
+        <form class="mb-4" th:action="@{/characters/{id}/spell-slots/save(id=${character.id})}" method="post" th:object="${newSpellSlot}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Círculo</label>
+                    <select th:field="*{spellCircle}" class="form-select" required>
+                        <option value="">Selecione</option>
+                        <option value="1">1º Círculo</option>
+                        <option value="2">2º Círculo</option>
+                        <option value="3">3º Círculo</option>
+                        <option value="4">4º Círculo</option>
+                        <option value="5">5º Círculo</option>
+                        <option value="6">6º Círculo</option>
+                        <option value="7">7º Círculo</option>
+                        <option value="8">8º Círculo</option>
+                        <option value="9">9º Círculo</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Espaços totais</label>
+                    <input type="number" th:field="*{totalSlots}" class="form-control" min="0" placeholder="4">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Espaços usados</label>
+                    <input type="number" th:field="*{usedSlots}" class="form-control" min="0" placeholder="0">
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-warning w-100 fw-semibold">
+                        Adicionar espaço
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div th:if="${#lists.isEmpty(spellSlots)}" class="empty-mini">
+            Nenhum espaço de magia cadastrado.
+        </div>
+
+        <div class="row g-3" th:if="${!#lists.isEmpty(spellSlots)}">
+            <div class="col-md-4 col-lg-3" th:each="slot : ${spellSlots}">
+                <div class="spell-slot-card">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <h5 class="fw-bold mb-1">
+                                <span th:text="${slot.spellCircle}">1</span>º Círculo
+                            </h5>
+
+                            <p class="mb-0 text-muted">
+                                Usados:
+                                <strong th:text="${slot.usedSlots != null ? slot.usedSlots : 0}">0</strong>
+                                /
+                                <strong th:text="${slot.totalSlots != null ? slot.totalSlots : 0}">4</strong>
+                            </p>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-warning"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    th:data-bs-target="'#editSlot' + ${slot.id}">
+                                Editar
+                            </button>
+
+                            <a th:href="@{/characters/{characterId}/spell-slots/delete/{slotId}(characterId=${character.id}, slotId=${slot.id})}"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Deseja excluir este controle de espaço?')">
+                                X
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="progress mt-3" style="height: 10px;">
+                        <div class="progress-bar bg-warning"
+                             th:style="'width: ' + (${slot.totalSlots != null && slot.totalSlots > 0 ? (slot.usedSlots != null ? slot.usedSlots * 100 / slot.totalSlots : 0) : 0}) + '%'">
+                        </div>
+                    </div>
+
+                    <div class="collapse mt-3" th:id="'editSlot' + ${slot.id}">
+                        <form th:action="@{/characters/{characterId}/spell-slots/update/{slotId}(characterId=${character.id}, slotId=${slot.id})}" method="post">
+                            <div class="mb-2">
+                                <label class="form-label text-light">Círculo</label>
+                                <select name="spellCircle" class="form-select">
+                                    <option value="1" th:selected="${slot.spellCircle == 1}">1º Círculo</option>
+                                    <option value="2" th:selected="${slot.spellCircle == 2}">2º Círculo</option>
+                                    <option value="3" th:selected="${slot.spellCircle == 3}">3º Círculo</option>
+                                    <option value="4" th:selected="${slot.spellCircle == 4}">4º Círculo</option>
+                                    <option value="5" th:selected="${slot.spellCircle == 5}">5º Círculo</option>
+                                    <option value="6" th:selected="${slot.spellCircle == 6}">6º Círculo</option>
+                                    <option value="7" th:selected="${slot.spellCircle == 7}">7º Círculo</option>
+                                    <option value="8" th:selected="${slot.spellCircle == 8}">8º Círculo</option>
+                                    <option value="9" th:selected="${slot.spellCircle == 9}">9º Círculo</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label text-light">Espaços totais</label>
+                                <input type="number" name="totalSlots" class="form-control" th:value="${slot.totalSlots}" min="0">
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label text-light">Espaços usados</label>
+                                <input type="number" name="usedSlots" class="form-control" th:value="${slot.usedSlots}" min="0">
+                            </div>
+
+                            <button type="submit" class="btn btn-warning btn-sm fw-semibold">
+                                Atualizar espaços
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="sheet-card">
+        <div class="mb-4">
+            <h2 class="fw-bold mb-1">Magias</h2>
+            <p class="text-muted mb-0">Cadastre truques e magias por círculo.</p>
+        </div>
+
+        <div class="spellcasting-summary mb-4">
+            <div class="spellcasting-box">
+                <span>Atributo de Conjuração</span>
+                <strong th:text="${character.spellcastingAbilityLabel}">Carisma</strong>
+            </div>
+
+            <div class="spellcasting-box">
+                <span>Ataque com Magia</span>
+                <strong th:text="${character.formattedSpellAttackBonus}">+5</strong>
+            </div>
+
+            <div class="spellcasting-box">
+                <span>DT de Resistência</span>
+                <strong th:text="${character.spellSaveDc}">13</strong>
+            </div>
+        </div>
+
+        <form class="mb-4" th:action="@{/characters/{id}/spells/save(id=${character.id})}" method="post" th:object="${newSpell}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Nome da magia</label>
+                    <input type="text" th:field="*{name}" class="form-control" placeholder="Ex: Mísseis Mágicos" required>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Tipo</label>
+                    <select th:field="*{cantrip}" class="form-select">
+                        <option value="false">Magia</option>
+                        <option value="true">Truque</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Círculo</label>
+                    <select th:field="*{spellCircle}" class="form-select">
+                        <option value="0">Truque</option>
+                        <option value="1">1º</option>
+                        <option value="2">2º</option>
+                        <option value="3">3º</option>
+                        <option value="4">4º</option>
+                        <option value="5">5º</option>
+                        <option value="6">6º</option>
+                        <option value="7">7º</option>
+                        <option value="8">8º</option>
+                        <option value="9">9º</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" th:field="*{description}" class="form-control" placeholder="Efeito resumido da magia">
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-warning w-100 fw-semibold">
+                        Adicionar
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="spell-list-section mb-4">
+            <h4 class="fw-bold mb-3">Truques</h4>
+
+            <ul class="list-group spell-list">
+                <li class="list-group-item spell-list-item"
+                    th:each="spell : ${spells}"
+                    th:if="${spell.cantrip == true || spell.spellCircle == 0}">
+
+                    <div class="d-flex justify-content-between gap-3 flex-wrap">
+                        <div>
+                            <h5 class="fw-bold mb-1" th:text="${spell.name}">
+                                Nome da magia
+                            </h5>
+
+                            <span class="badge text-bg-warning mb-2">
+                        Truque
+                    </span>
+
+                            <p class="text-muted mb-0 preserve-lines"
+                               th:text="${spell.description != null && spell.description != '' ? spell.description : 'Sem descrição.'}">
+                                Descrição.
+                            </p>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-warning"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    th:data-bs-target="'#editSpell' + ${spell.id}">
+                                Editar
+                            </button>
+
+                            <a th:href="@{/characters/{characterId}/spells/delete/{spellId}(characterId=${character.id}, spellId=${spell.id})}"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Deseja excluir esta magia?')">
+                                Excluir
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="collapse mt-3" th:id="'editSpell' + ${spell.id}">
+                        <form th:action="@{/characters/{characterId}/spells/update/{spellId}(characterId=${character.id}, spellId=${spell.id})}" method="post">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nome</label>
+                                    <input type="text" name="name" class="form-control" th:value="${spell.name}" required>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Tipo</label>
+                                    <select name="cantrip" class="form-select">
+                                        <option value="false" th:selected="${spell.cantrip != true}">Magia</option>
+                                        <option value="true" th:selected="${spell.cantrip == true}">Truque</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Círculo</label>
+                                    <select name="spellCircle" class="form-select">
+                                        <option value="0" th:selected="${spell.spellCircle == 0}">Truque</option>
+                                        <option value="1" th:selected="${spell.spellCircle == 1}">1º</option>
+                                        <option value="2" th:selected="${spell.spellCircle == 2}">2º</option>
+                                        <option value="3" th:selected="${spell.spellCircle == 3}">3º</option>
+                                        <option value="4" th:selected="${spell.spellCircle == 4}">4º</option>
+                                        <option value="5" th:selected="${spell.spellCircle == 5}">5º</option>
+                                        <option value="6" th:selected="${spell.spellCircle == 6}">6º</option>
+                                        <option value="7" th:selected="${spell.spellCircle == 7}">7º</option>
+                                        <option value="8" th:selected="${spell.spellCircle == 8}">8º</option>
+                                        <option value="9" th:selected="${spell.spellCircle == 9}">9º</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label class="form-label">Descrição</label>
+                                    <textarea name="description" class="form-control" rows="3" th:text="${spell.description}"></textarea>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <button type="submit" class="btn btn-warning btn-sm fw-semibold">
+                                        Salvar alterações
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="spell-list-section" th:each="circle : ${circles}">
+            <h4 class="fw-bold mt-4 mb-3">
+                <span th:text="${circle}">1</span>º Círculo
+            </h4>
+
+            <ul class="list-group spell-list">
+                <li class="list-group-item spell-list-item"
+                    th:each="spell : ${spells}"
+                    th:if="${spell.spellCircle == circle && spell.cantrip != true}">
+
+                    <div class="d-flex justify-content-between gap-3 flex-wrap">
+                        <div>
+                            <h5 class="fw-bold mb-1" th:text="${spell.name}">
+                                Nome da magia
+                            </h5>
+
+                            <span class="badge text-bg-dark mb-2">
+                        <span th:text="${spell.spellCircle}">1</span>º Círculo
+                    </span>
+
+                            <p class="text-muted mb-0 preserve-lines"
+                               th:text="${spell.description != null && spell.description != '' ? spell.description : 'Sem descrição.'}">
+                                Descrição.
+                            </p>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-warning"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    th:data-bs-target="'#editSpell' + ${spell.id}">
+                                Editar
+                            </button>
+
+                            <a th:href="@{/characters/{characterId}/spells/delete/{spellId}(characterId=${character.id}, spellId=${spell.id})}"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Deseja excluir esta magia?')">
+                                Excluir
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="collapse mt-3" th:id="'editSpell' + ${spell.id}">
+                        <form th:action="@{/characters/{characterId}/spells/update/{spellId}(characterId=${character.id}, spellId=${spell.id})}" method="post">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nome</label>
+                                    <input type="text" name="name" class="form-control" th:value="${spell.name}" required>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Tipo</label>
+                                    <select name="cantrip" class="form-select">
+                                        <option value="false" th:selected="${spell.cantrip != true}">Magia</option>
+                                        <option value="true" th:selected="${spell.cantrip == true}">Truque</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Círculo</label>
+                                    <select name="spellCircle" class="form-select">
+                                        <option value="0" th:selected="${spell.spellCircle == 0}">Truque</option>
+                                        <option value="1" th:selected="${spell.spellCircle == 1}">1º</option>
+                                        <option value="2" th:selected="${spell.spellCircle == 2}">2º</option>
+                                        <option value="3" th:selected="${spell.spellCircle == 3}">3º</option>
+                                        <option value="4" th:selected="${spell.spellCircle == 4}">4º</option>
+                                        <option value="5" th:selected="${spell.spellCircle == 5}">5º</option>
+                                        <option value="6" th:selected="${spell.spellCircle == 6}">6º</option>
+                                        <option value="7" th:selected="${spell.spellCircle == 7}">7º</option>
+                                        <option value="8" th:selected="${spell.spellCircle == 8}">8º</option>
+                                        <option value="9" th:selected="${spell.spellCircle == 9}">9º</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label class="form-label">Descrição</label>
+                                    <textarea name="description" class="form-control" rows="3" th:text="${spell.description}"></textarea>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <button type="submit" class="btn btn-warning btn-sm fw-semibold">
+                                        Salvar alterações
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </section>
+
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

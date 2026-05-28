@@ -43,10 +43,16 @@ public class RpgCharacter {
     private Integer wisdom;
     private Integer charisma;
 
+    private String spellcastingAbility;
+
     @Column(length = 1000)
     private String description;
 
-    private String avatarUrl;
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    private byte[] avatarData;
+
+    private String avatarContentType;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -60,4 +66,100 @@ public class RpgCharacter {
 
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SpellSlot> spellSlots;
+
+    // Métodos para calcular bônus de proficiência, modificadores de habilidade, etc.
+
+    public Integer getProficiencyBonus() {
+        if (level == null) {
+            return 2;
+        }
+
+        if (level >= 17) {
+            return 6;
+        }
+
+        if (level >= 13) {
+            return 5;
+        }
+
+        if (level >= 9) {
+            return 4;
+        }
+
+        if (level >= 5) {
+            return 3;
+        }
+
+        return 2;
+    }
+
+    public Integer getAbilityModifier(Integer abilityScore) {
+        if (abilityScore == null) {
+            abilityScore = 10;
+        }
+
+        return Math.floorDiv(abilityScore - 10, 2);
+    }
+
+    public Integer getSpellcastingModifier() {
+        if (spellcastingAbility == null || spellcastingAbility.isBlank()) {
+            return 0;
+        }
+
+        return switch (spellcastingAbility) {
+            case "intelligence" -> getAbilityModifier(intelligence);
+            case "wisdom" -> getAbilityModifier(wisdom);
+            case "charisma" -> getAbilityModifier(charisma);
+            default -> 0;
+        };
+    }
+
+    public Integer getSpellAttackBonus() {
+        return getProficiencyBonus() + getSpellcastingModifier();
+    }
+
+    public Integer getSpellSaveDc() {
+        return 8 + getProficiencyBonus() + getSpellcastingModifier();
+    }
+
+    public String getSpellcastingAbilityLabel() {
+        if (spellcastingAbility == null || spellcastingAbility.isBlank()) {
+            return "Não definido";
+        }
+
+        return switch (spellcastingAbility) {
+            case "intelligence" -> "INT";
+            case "wisdom" -> "SAB";
+            case "charisma" -> "CAR";
+            default -> "Não definido";
+        };
+    }
+
+    public String getFormattedProficiencyBonus() {
+        return formatBonus(getProficiencyBonus());
+    }
+
+    public String getFormattedSpellcastingModifier() {
+        return formatBonus(getSpellcastingModifier());
+    }
+
+    public String getFormattedSpellAttackBonus() {
+        return formatBonus(getSpellAttackBonus());
+    }
+
+    public boolean hasAvatar() {
+        return avatarData != null && avatarData.length > 0;
+    }
+
+    private String formatBonus(Integer value) {
+        if (value == null) {
+            value = 0;
+        }
+
+        if (value >= 0) {
+            return "+" + value;
+        }
+
+        return value.toString();
+    }
 }

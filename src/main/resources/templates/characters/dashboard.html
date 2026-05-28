@@ -42,7 +42,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <img class="avatar"
-                             th:src="${character.avatarUrl != null && character.avatarUrl != '' ? character.avatarUrl : '/img/default-avatar.jpg'}"
+                             th:src="${character.hasAvatar() ? '/characters/' + character.id + '/avatar' : '/img/default-avatar.jpg'}"
                              alt="Avatar">
 
                         <div>
@@ -58,17 +58,17 @@
                     <div class="d-flex justify-content-between bg-light rounded-3 p-3 mb-3">
                         <div>
                             <small class="text-muted">Nível</small>
-                            <div class="fw-bold" th:text="${character.level}">1</div>
+                            <div class="fw-bold" th:text="${character.level != null ? character.level : '-'}">1</div>
                         </div>
 
                         <div>
                             <small class="text-muted">PV</small>
-                            <div class="fw-bold" th:text="${character.hitPoints}">10</div>
+                            <div class="fw-bold" th:text="${character.hitPoints != null ? character.hitPoints : '-'}">10</div>
                         </div>
 
                         <div>
                             <small class="text-muted">CA</small>
-                            <div class="fw-bold" th:text="${character.armorClass}">15</div>
+                            <div class="fw-bold" th:text="${character.armorClass != null ? character.armorClass : '-'}">15</div>
                         </div>
                     </div>
 

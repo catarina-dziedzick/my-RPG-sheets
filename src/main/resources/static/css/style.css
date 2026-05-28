@@ -170,4 +170,128 @@ body {
         width: 140px;
         height: 140px;
     }
+
+    .preserve-lines {
+        white-space: pre-line;
+    }
+
+    .empty-mini {
+        background: #f8f9fa;
+        border: 1px dashed #d1d5db;
+        color: #6b7280;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .mini-card {
+        background: #f8f9fa;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 20px;
+    }
+
+    .spell-slot-card {
+        background: #111827;
+        color: white;
+        border-radius: 18px;
+        padding: 20px;
+    }
+
+    .spell-slot-card .text-muted {
+        color: #d1d5db !important;
+    }
+
+    .spell-card {
+        background: #f8f9fa;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 20px;
+    }
+
+    .spell-accordion-item {
+        border-radius: 16px !important;
+        overflow: hidden;
+        margin-bottom: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .accordion-button {
+        font-weight: 700;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background: #fff3cd;
+        color: #111827;
+    }
+
+    .progress {
+        background-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .spell-list {
+        border-radius: 18px;
+        overflow: hidden;
+    }
+
+    .spell-list-item {
+        padding: 18px 20px;
+        border-color: #e5e7eb;
+    }
+
+    .spell-list-item h5 {
+        color: #111827;
+    }
+
+    .spell-list-section {
+        margin-bottom: 18px;
+    }
+
+    .spell-slot-card .btn-outline-warning {
+        color: #ffc107;
+        border-color: #ffc107;
+    }
+
+    .spell-slot-card .btn-outline-warning:hover {
+        color: #111827;
+        background: #ffc107;
+    }
+
+    .spellcasting-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+
+    .spellcasting-box {
+        background: #111827;
+        color: white;
+        border-radius: 18px;
+        padding: 20px;
+    }
+
+    .spellcasting-box span {
+        display: block;
+        font-size: 13px;
+        color: #d1d5db;
+        margin-bottom: 6px;
+    }
+
+    .spellcasting-box strong {
+        display: block;
+        font-size: 26px;
+        line-height: 1;
+    }
+
+    @media (max-width: 992px) {
+        .spellcasting-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .spellcasting-summary {
+            grid-template-columns: 1fr;
+        }
+    }
 }

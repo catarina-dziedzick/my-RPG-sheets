@@ -17,7 +17,6 @@ public class CharacterSpell {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Spell name is required.")
     private String name;
 
     private Integer spellCircle;

@@ -6,6 +6,7 @@ import com.myrpgsheets.repository.InventoryItemRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class InventoryItemService {
@@ -18,6 +19,10 @@ public class InventoryItemService {
 
     public List<InventoryItem> findByCharacter(RpgCharacter character) {
         return inventoryItemRepository.findByCharacter(character);
+    }
+
+    public Optional<InventoryItem> findById(Long id) {
+        return inventoryItemRepository.findById(id);
     }
 
     public InventoryItem save(InventoryItem item) {
