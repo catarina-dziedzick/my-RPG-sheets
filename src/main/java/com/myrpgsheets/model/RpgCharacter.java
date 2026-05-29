@@ -1,6 +1,8 @@
 package com.myrpgsheets.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -22,32 +24,94 @@ public class RpgCharacter {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Character name is required.")
+    @NotBlank(message = "Nome é obrigatório.")
     private String name;
 
+    @NotBlank(message = "Raça é obrigatória.")
     private String race;
 
+    @NotBlank(message = "Classe é obrigatória.")
     private String characterClass;
 
-    @NotNull(message = "Level is required.")
+    @NotNull(message = "Nível é obrigatório.")
+    @Min(value = 1, message = "Nível mínimo é 1.")
+    @Max(value = 20, message = "Nível máximo é 20.")
     private Integer level;
 
+    @NotNull(message = "XP é obrigatório.")
+    @Min(value = 0, message = "XP não pode ser negativo.")
     private Integer experiencePoints;
 
+    @NotNull(message = "Pontos de Vida são obrigatórios.")
+    @Min(value = 0, message = "HP não pode ser negativo.")
     private Integer hitPoints;
+
+    @NotNull(message = "Vida Máxima é obrigatória.")
+    @Min(value = 1, message = "Vida Máxima deve ser ao menos 1.")
     private Integer maxHitPoints;
+
     private Integer temporaryHitPoints;
 
+    @NotNull(message = "Classe de Armadura é obrigatória.")
+    @Min(value = 0, message = "CA não pode ser negativa.")
     private Integer armorClass;
 
+    @NotNull(message = "Força é obrigatória.")
+    @Min(value = 1, message = "Atributo mínimo é 1.") @Max(value = 30, message = "Atributo máximo é 30.")
     private Integer strength;
+
+    @NotNull(message = "Destreza é obrigatória.")
+    @Min(value = 1, message = "Atributo mínimo é 1.") @Max(value = 30, message = "Atributo máximo é 30.")
     private Integer dexterity;
+
+    @NotNull(message = "Constituição é obrigatória.")
+    @Min(value = 1, message = "Atributo mínimo é 1.") @Max(value = 30, message = "Atributo máximo é 30.")
     private Integer constitution;
+
+    @NotNull(message = "Inteligência é obrigatória.")
+    @Min(value = 1, message = "Atributo mínimo é 1.") @Max(value = 30, message = "Atributo máximo é 30.")
     private Integer intelligence;
+
+    @NotNull(message = "Sabedoria é obrigatória.")
+    @Min(value = 1, message = "Atributo mínimo é 1.") @Max(value = 30, message = "Atributo máximo é 30.")
     private Integer wisdom;
+
+    @NotNull(message = "Carisma é obrigatório.")
+    @Min(value = 1, message = "Atributo mínimo é 1.") @Max(value = 30, message = "Atributo máximo é 30.")
     private Integer charisma;
 
     private String spellcastingAbility;
+
+    private String background;
+    private String alignment;
+
+    // ===== Proficiências em Testes de Resistência =====
+    private Boolean saveProfStrength;
+    private Boolean saveProfDexterity;
+    private Boolean saveProfConstitution;
+    private Boolean saveProfIntelligence;
+    private Boolean saveProfWisdom;
+    private Boolean saveProfCharisma;
+
+    // ===== Proficiências em Perícias =====
+    private Boolean profAcrobatics;        // Acrobacia (Destreza)
+    private Boolean profAnimalHandling;    // Adestrar Animais (Sabedoria)
+    private Boolean profArcana;            // Arcanismo (Inteligência)
+    private Boolean profAthletics;         // Atletismo (Força)
+    private Boolean profPerformance;       // Atuação (Carisma)
+    private Boolean profDeception;         // Enganação (Carisma)
+    private Boolean profStealth;           // Furtividade (Destreza)
+    private Boolean profHistory;           // História (Inteligência)
+    private Boolean profIntimidation;      // Intimidação (Carisma)
+    private Boolean profInsight;           // Intuição (Sabedoria)
+    private Boolean profInvestigation;     // Investigação (Inteligência)
+    private Boolean profMedicine;          // Medicina (Sabedoria)
+    private Boolean profNature;            // Natureza (Inteligência)
+    private Boolean profPerception;        // Percepção (Sabedoria)
+    private Boolean profPersuasion;        // Persuasão (Carisma)
+    private Boolean profSleightOfHand;     // Prestidigitação (Destreza)
+    private Boolean profReligion;          // Religião (Inteligência)
+    private Boolean profSurvival;          // Sobrevivência (Sabedoria)
 
     @Column(length = 1000)
     private String description;
@@ -204,6 +268,41 @@ public class RpgCharacter {
     private String formatAbilityModifier(Integer abilityScore) {
         return formatBonus(getAbilityModifier(abilityScore));
     }
+
+    // ===== Perícias =====
+
+    private int skillBonus(Integer abilityScore, Boolean proficient) {
+        int mod = getAbilityModifier(abilityScore);
+        if (Boolean.TRUE.equals(proficient)) mod += getProficiencyBonus();
+        return mod;
+    }
+
+    public String getSkillAcrobatics()     { return formatBonus(skillBonus(dexterity,     profAcrobatics)); }
+    public String getSkillAnimalHandling() { return formatBonus(skillBonus(wisdom,         profAnimalHandling)); }
+    public String getSkillArcana()         { return formatBonus(skillBonus(intelligence,   profArcana)); }
+    public String getSkillAthletics()      { return formatBonus(skillBonus(strength,       profAthletics)); }
+    public String getSkillPerformance()    { return formatBonus(skillBonus(charisma,       profPerformance)); }
+    public String getSkillDeception()      { return formatBonus(skillBonus(charisma,       profDeception)); }
+    public String getSkillStealth()        { return formatBonus(skillBonus(dexterity,      profStealth)); }
+    public String getSkillHistory()        { return formatBonus(skillBonus(intelligence,   profHistory)); }
+    public String getSkillIntimidation()   { return formatBonus(skillBonus(charisma,       profIntimidation)); }
+    public String getSkillInsight()        { return formatBonus(skillBonus(wisdom,         profInsight)); }
+    public String getSkillInvestigation()  { return formatBonus(skillBonus(intelligence,   profInvestigation)); }
+    public String getSkillMedicine()       { return formatBonus(skillBonus(wisdom,         profMedicine)); }
+    public String getSkillNature()         { return formatBonus(skillBonus(intelligence,   profNature)); }
+    public String getSkillPerception()     { return formatBonus(skillBonus(wisdom,         profPerception)); }
+    public String getSkillPersuasion()     { return formatBonus(skillBonus(charisma,       profPersuasion)); }
+    public String getSkillSleightOfHand()  { return formatBonus(skillBonus(dexterity,      profSleightOfHand)); }
+    public String getSkillReligion()       { return formatBonus(skillBonus(intelligence,   profReligion)); }
+    public String getSkillSurvival()       { return formatBonus(skillBonus(wisdom,         profSurvival)); }
+
+    // ===== Testes de Resistência =====
+    public String getSaveStrength()        { return formatBonus(skillBonus(strength,      saveProfStrength)); }
+    public String getSaveDexterity()       { return formatBonus(skillBonus(dexterity,     saveProfDexterity)); }
+    public String getSaveConstitution()    { return formatBonus(skillBonus(constitution,  saveProfConstitution)); }
+    public String getSaveIntelligence()    { return formatBonus(skillBonus(intelligence,  saveProfIntelligence)); }
+    public String getSaveWisdom()          { return formatBonus(skillBonus(wisdom,         saveProfWisdom)); }
+    public String getSaveCharisma()        { return formatBonus(skillBonus(charisma,       saveProfCharisma)); }
 
     // ===== Progressão de XP (D&D 5e) =====
 

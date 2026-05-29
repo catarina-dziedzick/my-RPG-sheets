@@ -121,6 +121,9 @@ public class RpgCharacterController {
             characterToSave.setHitPoints(maxHp);
         }
 
+        // garante no máximo 2 proficiências em testes de resistência
+        clampSaveProficiencies(characterToSave);
+
         rpgCharacterService.save(characterToSave);
 
         return "redirect:/characters";
@@ -1073,7 +1076,58 @@ public class RpgCharacterController {
         target.setWisdom(source.getWisdom());
         target.setCharisma(source.getCharisma());
         target.setSpellcastingAbility(source.getSpellcastingAbility());
+        target.setBackground(source.getBackground());
+        target.setAlignment(source.getAlignment());
         target.setDescription(source.getDescription());
+
+        // Proficiências em Testes de Resistência
+        target.setSaveProfStrength(source.getSaveProfStrength());
+        target.setSaveProfDexterity(source.getSaveProfDexterity());
+        target.setSaveProfConstitution(source.getSaveProfConstitution());
+        target.setSaveProfIntelligence(source.getSaveProfIntelligence());
+        target.setSaveProfWisdom(source.getSaveProfWisdom());
+        target.setSaveProfCharisma(source.getSaveProfCharisma());
+
+        // Proficiências em perícias
+        target.setProfAcrobatics(source.getProfAcrobatics());
+        target.setProfAnimalHandling(source.getProfAnimalHandling());
+        target.setProfArcana(source.getProfArcana());
+        target.setProfAthletics(source.getProfAthletics());
+        target.setProfPerformance(source.getProfPerformance());
+        target.setProfDeception(source.getProfDeception());
+        target.setProfStealth(source.getProfStealth());
+        target.setProfHistory(source.getProfHistory());
+        target.setProfIntimidation(source.getProfIntimidation());
+        target.setProfInsight(source.getProfInsight());
+        target.setProfInvestigation(source.getProfInvestigation());
+        target.setProfMedicine(source.getProfMedicine());
+        target.setProfNature(source.getProfNature());
+        target.setProfPerception(source.getProfPerception());
+        target.setProfPersuasion(source.getProfPersuasion());
+        target.setProfSleightOfHand(source.getProfSleightOfHand());
+        target.setProfReligion(source.getProfReligion());
+        target.setProfSurvival(source.getProfSurvival());
+    }
+
+    /** Se mais de 2 saves estiverem marcados, desmarca os excedentes (ordem: CAR, SAB, INT, CON, DES, FOR). */
+    private void clampSaveProficiencies(RpgCharacter c) {
+        boolean[] saves = {
+            Boolean.TRUE.equals(c.getSaveProfStrength()),
+            Boolean.TRUE.equals(c.getSaveProfDexterity()),
+            Boolean.TRUE.equals(c.getSaveProfConstitution()),
+            Boolean.TRUE.equals(c.getSaveProfIntelligence()),
+            Boolean.TRUE.equals(c.getSaveProfWisdom()),
+            Boolean.TRUE.equals(c.getSaveProfCharisma())
+        };
+        int count = 0;
+        for (boolean b : saves) if (b) count++;
+        if (count <= 2) return;
+        // desmarca do final até restar 2
+        if (saves[5] && count > 2) { c.setSaveProfCharisma(false);   count--; }
+        if (saves[4] && count > 2) { c.setSaveProfWisdom(false);      count--; }
+        if (saves[3] && count > 2) { c.setSaveProfIntelligence(false); count--; }
+        if (saves[2] && count > 2) { c.setSaveProfConstitution(false); count--; }
+        if (saves[1] && count > 2) { c.setSaveProfDexterity(false);   count--; }
     }
 
     private void handleAvatarUpload(RpgCharacter character, MultipartFile avatarFile) {

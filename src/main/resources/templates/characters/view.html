@@ -75,6 +75,17 @@
                     <span th:text="${character.level != null ? character.level : '-'}">1</span>
                 </p>
 
+                <!-- Antecedente + Alinhamento -->
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <span class="badge-info-pill" th:if="${character.background != null && character.background != ''}">
+                        📜 <span th:text="${character.background}">Antecedente</span>
+                    </span>
+                    <span class="badge-alignment"
+                          th:if="${character.alignment != null && character.alignment != ''}"
+                          th:data-alignment="${character.alignment}"
+                          th:text="${character.alignment}">Alinhamento</span>
+                </div>
+
                 <!-- XP inline no cabeçalho -->
                 <div class="xp-inline"
                      th:with="xp=${character.experiencePoints != null ? character.experiencePoints : 0},
@@ -271,6 +282,189 @@
                 <div class="stat-modifier-box">
                     <div class="stat-modifier" th:text="${character.formattedCharismaModifier}">+0</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ===== TESTES DE RESISTÊNCIA ===== -->
+        <h3 class="fw-bold mb-3">Testes de Resistência</h3>
+        <div class="saves-card mb-4">
+            <div class="row g-0">
+                <div class="col-6 col-md-4">
+                    <div class="save-row" th:classappend="${character.saveProfStrength == true ? ' save-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.saveProfStrength == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.saveStrength}">+0</span>
+                        <span class="skill-name">Força</span>
+                        <span class="skill-attr">FOR</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="save-row" th:classappend="${character.saveProfDexterity == true ? ' save-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.saveProfDexterity == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.saveDexterity}">+0</span>
+                        <span class="skill-name">Destreza</span>
+                        <span class="skill-attr">DES</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="save-row" th:classappend="${character.saveProfConstitution == true ? ' save-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.saveProfConstitution == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.saveConstitution}">+0</span>
+                        <span class="skill-name">Constituição</span>
+                        <span class="skill-attr">CON</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="save-row" th:classappend="${character.saveProfIntelligence == true ? ' save-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.saveProfIntelligence == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.saveIntelligence}">+0</span>
+                        <span class="skill-name">Inteligência</span>
+                        <span class="skill-attr">INT</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="save-row" th:classappend="${character.saveProfWisdom == true ? ' save-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.saveProfWisdom == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.saveWisdom}">+0</span>
+                        <span class="skill-name">Sabedoria</span>
+                        <span class="skill-attr">SAB</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="save-row" th:classappend="${character.saveProfCharisma == true ? ' save-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.saveProfCharisma == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.saveCharisma}">+0</span>
+                        <span class="skill-name">Carisma</span>
+                        <span class="skill-attr">CAR</span>
+                    </div>
+                </div>
+            </div>
+            <div class="skills-legend mt-2">
+                <span class="dot-active-legend"></span> Proficiente
+            </div>
+        </div>
+
+        <!-- ===== PERÍCIAS ===== -->
+        <h3 class="fw-bold mb-3">Perícias</h3>
+        <div class="skills-card mb-4">
+            <div class="row g-0">
+                <!-- Coluna 1 -->
+                <div class="col-md-6">
+                    <div class="skill-row" th:classappend="${character.profAthletics == true    ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profAthletics == true    ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillAthletics}">+0</span>
+                        <span class="skill-name">Atletismo</span>
+                        <span class="skill-attr">FOR</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profAcrobatics == true   ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profAcrobatics == true   ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillAcrobatics}">+0</span>
+                        <span class="skill-name">Acrobacia</span>
+                        <span class="skill-attr">DES</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profSleightOfHand == true ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profSleightOfHand == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillSleightOfHand}">+0</span>
+                        <span class="skill-name">Prestidigitação</span>
+                        <span class="skill-attr">DES</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profStealth == true      ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profStealth == true      ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillStealth}">+0</span>
+                        <span class="skill-name">Furtividade</span>
+                        <span class="skill-attr">DES</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profArcana == true       ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profArcana == true       ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillArcana}">+0</span>
+                        <span class="skill-name">Arcanismo</span>
+                        <span class="skill-attr">INT</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profHistory == true      ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profHistory == true      ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillHistory}">+0</span>
+                        <span class="skill-name">História</span>
+                        <span class="skill-attr">INT</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profInvestigation == true ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profInvestigation == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillInvestigation}">+0</span>
+                        <span class="skill-name">Investigação</span>
+                        <span class="skill-attr">INT</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profNature == true       ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profNature == true       ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillNature}">+0</span>
+                        <span class="skill-name">Natureza</span>
+                        <span class="skill-attr">INT</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profReligion == true     ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profReligion == true     ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillReligion}">+0</span>
+                        <span class="skill-name">Religião</span>
+                        <span class="skill-attr">INT</span>
+                    </div>
+                </div>
+                <!-- Coluna 2 -->
+                <div class="col-md-6">
+                    <div class="skill-row" th:classappend="${character.profAnimalHandling == true ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profAnimalHandling == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillAnimalHandling}">+0</span>
+                        <span class="skill-name">Adestrar Animais</span>
+                        <span class="skill-attr">SAB</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profInsight == true      ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profInsight == true      ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillInsight}">+0</span>
+                        <span class="skill-name">Intuição</span>
+                        <span class="skill-attr">SAB</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profMedicine == true     ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profMedicine == true     ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillMedicine}">+0</span>
+                        <span class="skill-name">Medicina</span>
+                        <span class="skill-attr">SAB</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profPerception == true   ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profPerception == true   ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillPerception}">+0</span>
+                        <span class="skill-name">Percepção</span>
+                        <span class="skill-attr">SAB</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profSurvival == true     ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profSurvival == true     ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillSurvival}">+0</span>
+                        <span class="skill-name">Sobrevivência</span>
+                        <span class="skill-attr">SAB</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profDeception == true    ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profDeception == true    ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillDeception}">+0</span>
+                        <span class="skill-name">Enganação</span>
+                        <span class="skill-attr">CAR</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profIntimidation == true ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profIntimidation == true ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillIntimidation}">+0</span>
+                        <span class="skill-name">Intimidação</span>
+                        <span class="skill-attr">CAR</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profPerformance == true  ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profPerformance == true  ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillPerformance}">+0</span>
+                        <span class="skill-name">Atuação</span>
+                        <span class="skill-attr">CAR</span>
+                    </div>
+                    <div class="skill-row" th:classappend="${character.profPersuasion == true   ? ' skill-proficient' : ''}">
+                        <span class="skill-dot" th:classappend="${character.profPersuasion == true   ? ' dot-active' : ''}"></span>
+                        <span class="skill-bonus" th:text="${character.skillPersuasion}">+0</span>
+                        <span class="skill-name">Persuasão</span>
+                        <span class="skill-attr">CAR</span>
+                    </div>
+                </div>
+            </div>
+            <div class="skills-legend mt-2">
+                <span class="dot-active-legend"></span> Proficiente
+                <span class="ms-3 text-muted" style="font-size:.75rem">Bônus = Mod. do atributo + Bônus de proficiência (quando marcado)</span>
             </div>
         </div>
 

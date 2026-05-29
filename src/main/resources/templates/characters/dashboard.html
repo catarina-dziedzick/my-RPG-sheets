@@ -52,6 +52,15 @@
                                 •
                                 <span th:text="${character.characterClass}">Classe</span>
                             </p>
+                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                <span class="badge-info-pill badge-sm"
+                                      th:if="${character.background != null && character.background != ''}"
+                                      th:text="'📜 ' + ${character.background}">Antecedente</span>
+                                <span class="badge-alignment badge-sm"
+                                      th:if="${character.alignment != null && character.alignment != ''}"
+                                      th:data-alignment="${character.alignment}"
+                                      th:text="${character.alignment}">Alinhamento</span>
+                            </div>
                         </div>
                     </div>
 
