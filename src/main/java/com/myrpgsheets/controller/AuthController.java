@@ -61,7 +61,7 @@ public class AuthController {
 
         if (userOptional.isPresent()) {
             session.setAttribute("loggedUser", userOptional.get());
-            return "redirect:/characters";
+            return "redirect:/dashboard";
         }
 
         model.addAttribute("error", "Invalid email/username or password.");

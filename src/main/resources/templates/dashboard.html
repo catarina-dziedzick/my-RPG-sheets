@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Principal | MyRPG Sheets</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="app-bg">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+    <a class="navbar-brand fw-bold" href="/dashboard">MyRPG Sheets</a>
+
+    <div class="ms-auto d-flex align-items-center gap-3">
+        <span class="text-light small" th:text="'Olá, ' + ${user.name}">Olá, usuário</span>
+        <a href="/logout" class="btn btn-outline-light btn-sm">Sair</a>
+    </div>
+</nav>
+
+<main class="container py-5">
+
+    <section class="dashboard-hero mb-5">
+        <span class="badge text-bg-warning mb-3">Painel Principal</span>
+
+        <h1 class="fw-bold mb-2">
+            Bem-vinda ao MyRPG Sheets
+        </h1>
+
+        <p class="text-muted mb-0">
+            Gerencie suas fichas de personagem, campanhas e mesas de RPG em um só lugar.
+        </p>
+    </section>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <a href="/characters" class="dashboard-card-link">
+                <div class="dashboard-card h-100">
+                    <div class="dashboard-icon">📜</div>
+
+                    <h3 class="fw-bold">Minhas Fichas</h3>
+
+                    <p>
+                        Visualize, edite e organize todas as suas fichas de personagens.
+                    </p>
+
+                    <span class="dashboard-action">Acessar fichas →</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6">
+            <a href="/campaigns" class="dashboard-card-link">
+                <div class="dashboard-card h-100">
+                    <div class="dashboard-icon">🏰</div>
+
+                    <h3 class="fw-bold">Campanhas</h3>
+
+                    <p>
+                        Crie salas, entre em campanhas e acompanhe fichas dos jogadores.
+                    </p>
+
+                    <span class="dashboard-action">Acessar campanhas →</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6">
+            <a href="/characters/new" class="dashboard-card-link">
+                <div class="dashboard-card h-100">
+                    <div class="dashboard-icon">⚔️</div>
+
+                    <h3 class="fw-bold">Nova Ficha</h3>
+
+                    <p>
+                        Crie um novo personagem com atributos, magias, itens e recursos.
+                    </p>
+
+                    <span class="dashboard-action">Criar ficha →</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6">
+            <a href="/campaigns/join" class="dashboard-card-link">
+                <div class="dashboard-card h-100">
+                    <div class="dashboard-icon">🔑</div>
+
+                    <h3 class="fw-bold">Entrar em Campanha</h3>
+
+                    <p>
+                        Use um código de convite para participar da sala criada por um mestre.
+                    </p>
+
+                    <span class="dashboard-action">Entrar com código →</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+</main>
+
+</body>
+</html>

@@ -1,11 +1,7 @@
 package com.myrpgsheets.controller;
 
 import com.myrpgsheets.model.*;
-import com.myrpgsheets.service.CharacterAbilityService;
-import com.myrpgsheets.service.CharacterSpellService;
-import com.myrpgsheets.service.InventoryItemService;
-import com.myrpgsheets.service.RpgCharacterService;
-import com.myrpgsheets.service.SpellSlotService;
+import com.myrpgsheets.service.*;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -13,16 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.*;
 
 @Controller
 @RequestMapping("/characters")
@@ -33,19 +25,22 @@ public class RpgCharacterController {
     private final CharacterSpellService characterSpellService;
     private final SpellSlotService spellSlotService;
     private final CharacterAbilityService characterAbilityService;
+    private final CampaignService campaignService;
 
     public RpgCharacterController(
             RpgCharacterService rpgCharacterService,
             InventoryItemService inventoryItemService,
             CharacterSpellService characterSpellService,
             SpellSlotService spellSlotService,
-            CharacterAbilityService characterAbilityService)
+            CharacterAbilityService characterAbilityService,
+            CampaignService campaignService)
     {
         this.rpgCharacterService = rpgCharacterService;
         this.inventoryItemService = inventoryItemService;
         this.characterSpellService = characterSpellService;
         this.spellSlotService = spellSlotService;
         this.characterAbilityService = characterAbilityService;
+        this.campaignService = campaignService;
     }
 
     @GetMapping
@@ -79,7 +74,9 @@ public class RpgCharacterController {
             @Valid @ModelAttribute RpgCharacter rpgCharacter,
             BindingResult result,
             @RequestParam(value = "avatarFile", required = false) MultipartFile avatarFile,
-            HttpSession session
+            @RequestParam(required = false) Long campaignId,
+            HttpSession session,
+            Model model
     ) {
         User user = (User) session.getAttribute("loggedUser");
 
@@ -88,6 +85,10 @@ public class RpgCharacterController {
         }
 
         if (result.hasErrors()) {
+            if (campaignId != null) {
+                model.addAttribute("campaignId", campaignId);
+            }
+
             return "characters/form";
         }
 
@@ -97,12 +98,39 @@ public class RpgCharacterController {
             Optional<RpgCharacter> existingCharacterOptional = rpgCharacterService.findById(rpgCharacter.getId());
 
             if (existingCharacterOptional.isEmpty()) {
+                if (campaignId != null) {
+                    return "redirect:/campaigns/view/" + campaignId;
+                }
+
                 return "redirect:/characters";
             }
 
             RpgCharacter existingCharacter = existingCharacterOptional.get();
 
-            if (!existingCharacter.getUser().getId().equals(user.getId())) {
+            boolean isOwner = existingCharacter.getUser() != null
+                    && existingCharacter.getUser().getId().equals(user.getId());
+
+            boolean canEditByCampaign = false;
+
+            if (campaignId != null) {
+                Optional<Campaign> campaignOptional = campaignService.findById(campaignId);
+
+                if (campaignOptional.isPresent()) {
+                    Campaign campaign = campaignOptional.get();
+
+                    canEditByCampaign = campaignService.canEditCharacterInCampaign(
+                            campaign,
+                            existingCharacter,
+                            user
+                    );
+                }
+            }
+
+            if (!isOwner && !canEditByCampaign) {
+                if (campaignId != null) {
+                    return "redirect:/campaigns/view/" + campaignId;
+                }
+
                 return "redirect:/characters";
             }
 
@@ -114,17 +142,20 @@ public class RpgCharacterController {
 
         handleAvatarUpload(characterToSave, avatarFile);
 
-        // normaliza HP atual se ultrapassar o máximo
         Integer maxHp = characterToSave.getMaxHitPoints();
         Integer curHp = characterToSave.getHitPoints();
+
         if (maxHp != null && maxHp > 0 && curHp != null && curHp > maxHp) {
             characterToSave.setHitPoints(maxHp);
         }
 
-        // garante no máximo 2 proficiências em testes de resistência
         clampSaveProficiencies(characterToSave);
 
         rpgCharacterService.save(characterToSave);
+
+        if (campaignId != null) {
+            return "redirect:/campaigns/view/" + campaignId;
+        }
 
         return "redirect:/characters";
     }
@@ -146,7 +177,16 @@ public class RpgCharacterController {
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId()) || !character.hasAvatar()) {
+        if (!character.hasAvatar()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean isOwner = character.getUser() != null
+                && character.getUser().getId().equals(user.getId());
+
+        boolean canViewThroughCampaign = campaignService.canViewCharacterThroughCampaign(character, user);
+
+        if (!isOwner && !canViewThroughCampaign) {
             return ResponseEntity.notFound().build();
         }
 
@@ -1041,6 +1081,86 @@ public class RpgCharacterController {
         body.put("uses", ability.getUses() == null ? 0 : ability.getUses());
         body.put("maxUses", ability.getMaxUses() == null ? 0 : ability.getMaxUses());
         return ResponseEntity.ok(body);
+    }
+
+    @GetMapping("/campaign/{campaignId}/edit/{characterId}")
+    public String editCharacterFromCampaign(
+            @PathVariable Long campaignId,
+            @PathVariable Long characterId,
+            HttpSession session,
+            Model model
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<Campaign> campaignOptional = campaignService.findById(campaignId);
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+
+        if (campaignOptional.isEmpty() || characterOptional.isEmpty()) {
+            return "redirect:/campaigns";
+        }
+
+        Campaign campaign = campaignOptional.get();
+        RpgCharacter character = characterOptional.get();
+
+        if (!campaignService.canEditCharacterInCampaign(campaign, character, user)) {
+            return "redirect:/campaigns/view/" + campaignId;
+        }
+
+        model.addAttribute("character", character);
+        model.addAttribute("campaignId", campaignId);
+
+        return "characters/form";
+    }
+
+    @GetMapping("/campaign/{campaignId}/view/{characterId}")
+    public String viewCharacterFromCampaign(
+            @PathVariable Long campaignId,
+            @PathVariable Long characterId,
+            HttpSession session,
+            Model model
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<Campaign> campaignOptional = campaignService.findById(campaignId);
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+
+        if (campaignOptional.isEmpty() || characterOptional.isEmpty()) {
+            return "redirect:/campaigns";
+        }
+
+        Campaign campaign = campaignOptional.get();
+        RpgCharacter character = characterOptional.get();
+
+        boolean isMember = campaignService.isMember(campaign, user);
+        boolean canEdit = campaignService.canEditCharacterInCampaign(campaign, character, user);
+
+        if (!isMember || !canEdit) {
+            return "redirect:/campaigns/view/" + campaignId;
+        }
+
+        model.addAttribute("character", character);
+        model.addAttribute("campaignId", campaignId);
+        model.addAttribute("canEditCharacter", canEdit);
+
+        // Se sua tela de ficha usa itens, magias e espaços, mantenha estes atributos:
+        model.addAttribute("items", inventoryItemService.findByCharacter(character));
+        model.addAttribute("spellSlots", spellSlotService.findByCharacter(character));
+        model.addAttribute("spells", characterSpellService.findByCharacter(character));
+        model.addAttribute("circles", List.of(1, 2, 3, 4, 5, 6, 7, 8, 9));
+
+        model.addAttribute("newItem", new InventoryItem());
+        model.addAttribute("newSpell", new CharacterSpell());
+        model.addAttribute("newSpellSlot", new SpellSlot());
+
+        return "characters/view";
     }
 
     private void normalizeAbilityUses(CharacterAbility ability) {
