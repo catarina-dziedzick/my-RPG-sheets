@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<nav th:fragment="appNavbar" class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+    <a class="navbar-brand fw-bold" href="/dashboard">MyRPG Sheets</a>
+
+    <div class="ms-auto d-flex align-items-center gap-2">
+        <a href="/characters" class="btn btn-outline-light btn-sm d-none d-md-inline-block">
+            Fichas
+        </a>
+
+        <a href="/campaigns" class="btn btn-outline-light btn-sm d-none d-md-inline-block">
+            Campanhas
+        </a>
+
+        <div class="dropdown">
+            <button class="btn btn-warning btn-sm dropdown-toggle fw-semibold"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                <span th:text="${session.loggedUser != null ? session.loggedUser.displayNameOrUserName : 'Usuário'}">
+                    Usuário
+                </span>
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li>
+                    <h6 class="dropdown-header">
+                        Minha conta
+                    </h6>
+                </li>
+
+                <li>
+                    <a class="dropdown-item" href="/settings">
+                        Configurações
+                    </a>
+                </li>
+
+                <li>
+                    <a class="dropdown-item" href="/dashboard">
+                        Início
+                    </a>
+                </li>
+
+                <li>
+                    <a class="dropdown-item d-md-none" href="/characters">
+                        Minhas fichas
+                    </a>
+                </li>
+
+                <li>
+                    <a class="dropdown-item d-md-none" href="/campaigns">
+                        Campanhas
+                    </a>
+                </li>
+
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+
+                <li>
+                    <a class="dropdown-item text-danger" href="/logout">
+                        Sair
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+</body>
+</html>

@@ -26,6 +26,7 @@ public class RpgCharacterController {
     private final SpellSlotService spellSlotService;
     private final CharacterAbilityService characterAbilityService;
     private final CampaignService campaignService;
+    private final CharacterImageService characterImageService;
 
     public RpgCharacterController(
             RpgCharacterService rpgCharacterService,
@@ -33,7 +34,8 @@ public class RpgCharacterController {
             CharacterSpellService characterSpellService,
             SpellSlotService spellSlotService,
             CharacterAbilityService characterAbilityService,
-            CampaignService campaignService)
+            CampaignService campaignService,
+            CharacterImageService characterImageService)
     {
         this.rpgCharacterService = rpgCharacterService;
         this.inventoryItemService = inventoryItemService;
@@ -41,6 +43,7 @@ public class RpgCharacterController {
         this.spellSlotService = spellSlotService;
         this.characterAbilityService = characterAbilityService;
         this.campaignService = campaignService;
+        this.characterImageService = characterImageService;
     }
 
     @GetMapping
@@ -252,36 +255,8 @@ public class RpgCharacterController {
             return "redirect:/characters";
         }
 
-        List<CharacterSpell> spells = characterSpellService.findByCharacter(character);
-        List<SpellSlot> spellSlots = spellSlotService.findByCharacter(character);
-        Map<Integer, SpellSlot> spellSlotsByCircle = new TreeMap<>();
-
-        for (SpellSlot slot : spellSlots) {
-            Integer circle = slot.getSpellCircle();
-
-            if (circle != null && circle > 0) {
-                spellSlotsByCircle.putIfAbsent(circle, slot);
-            }
-        }
-
-        List<Integer> availableSpellCircles = new ArrayList<>(spellSlotsByCircle.keySet());
-        List<SpellSlot> availableSpellSlots = new ArrayList<>(spellSlotsByCircle.values());
-
-        model.addAttribute("character", character);
-        model.addAttribute("items", inventoryItemService.findByCharacter(character));
-        model.addAttribute("spellSlots", spellSlots);
-        model.addAttribute("spellSlotsByCircle", spellSlotsByCircle);
-        model.addAttribute("availableSpellSlots", availableSpellSlots);
-
-        model.addAttribute("spells", spells);
-        model.addAttribute("availableSpellCircles", availableSpellCircles);
-
-        model.addAttribute("newItem", new InventoryItem());
-        model.addAttribute("newSpell", new CharacterSpell());
-        model.addAttribute("newSpellSlot", new SpellSlot());
-
-        model.addAttribute("abilities", characterAbilityService.findByCharacter(character));
-        model.addAttribute("newAbility", new CharacterAbility());
+        addCharacterViewAttributes(model, character);
+        model.addAttribute("canEditCharacter", true);
 
         return "characters/view";
     }
@@ -327,6 +302,7 @@ public class RpgCharacterController {
     public String adjustHitPoints(
             @PathVariable Long characterId,
             @RequestParam Integer delta,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -338,13 +314,13 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         int currentHitPoints = character.getHitPoints() == null ? 0 : character.getHitPoints();
@@ -354,13 +330,14 @@ public class RpgCharacterController {
         character.setHitPoints(updatedHitPoints);
         rpgCharacterService.save(character);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/hit-points/set")
     public String setHitPoints(
             @PathVariable Long characterId,
             @RequestParam Integer hitPoints,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -372,13 +349,13 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         int normalizedHitPoints = hitPoints == null ? 0 : Math.max(0, hitPoints);
@@ -387,13 +364,14 @@ public class RpgCharacterController {
         character.setHitPoints(normalizedHitPoints);
         rpgCharacterService.save(character);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/xp/adjust")
     public String adjustXp(
             @PathVariable Long characterId,
             @RequestParam Integer delta,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -405,13 +383,13 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         int current = character.getExperiencePoints() == null ? 0 : character.getExperiencePoints();
@@ -419,13 +397,14 @@ public class RpgCharacterController {
         character.setExperiencePoints(clampXp(character, updated));
         rpgCharacterService.save(character);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/xp/set")
     public String setXp(
             @PathVariable Long characterId,
             @RequestParam Integer experiencePoints,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -437,20 +416,20 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         int value = experiencePoints == null ? 0 : experiencePoints;
         character.setExperiencePoints(clampXp(character, value));
         rpgCharacterService.save(character);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     private int clampXp(RpgCharacter character, int value) {
@@ -472,27 +451,29 @@ public class RpgCharacterController {
     public String setTempHp(
             @PathVariable Long characterId,
             @RequestParam Integer temporaryHitPoints,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
         if (user == null) return "redirect:/login";
 
         Optional<RpgCharacter> opt = rpgCharacterService.findById(characterId);
-        if (opt.isEmpty()) return "redirect:/characters";
+        if (opt.isEmpty()) return redirectToSafePlace(campaignId);
 
         RpgCharacter character = opt.get();
-        if (!character.getUser().getId().equals(user.getId())) return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) return redirectToSafePlace(campaignId);
 
         int val = temporaryHitPoints == null ? 0 : Math.max(0, temporaryHitPoints);
         character.setTemporaryHitPoints(val);
         rpgCharacterService.save(character);
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/spell-slots/use")
     public String useSpellSlot(
             @PathVariable Long characterId,
             @RequestParam Integer spellCircle,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -504,13 +485,13 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         Optional<SpellSlot> slotOptional = spellSlotService.findByCharacterAndSpellCircle(character, spellCircle);
@@ -526,7 +507,7 @@ public class RpgCharacterController {
             }
         }
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/spell-slots/toggle")
@@ -534,6 +515,7 @@ public class RpgCharacterController {
             @PathVariable Long characterId,
             @RequestParam Integer spellCircle,
             @RequestParam Integer slotIndex,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -545,19 +527,19 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         Optional<SpellSlot> slotOptional = spellSlotService.findByCharacterAndSpellCircle(character, spellCircle);
 
         if (slotOptional.isEmpty()) {
-            return "redirect:/characters/view/" + characterId;
+            return redirectToCharacterView(characterId, campaignId);
         }
 
         SpellSlot slot = slotOptional.get();
@@ -565,7 +547,7 @@ public class RpgCharacterController {
         int used = slot.getUsedSlots() == null ? 0 : slot.getUsedSlots();
 
         if (slotIndex == null || slotIndex < 1 || slotIndex > total) {
-            return "redirect:/characters/view/" + characterId;
+            return redirectToCharacterView(characterId, campaignId);
         }
 
         if (slotIndex <= used) {
@@ -576,13 +558,14 @@ public class RpgCharacterController {
 
         spellSlotService.save(slot);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/items/save")
     public String saveItem(
             @PathVariable Long characterId,
             @ModelAttribute InventoryItem item,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -594,13 +577,13 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         item.setCharacter(character);
@@ -611,13 +594,14 @@ public class RpgCharacterController {
 
         inventoryItemService.save(item);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/spells/save")
     public String saveSpell(
             @PathVariable Long characterId,
             @ModelAttribute CharacterSpell spell,
+            @RequestParam(required = false) Long campaignId,
             RedirectAttributes redirectAttributes,
             HttpSession session
     ) {
@@ -630,13 +614,13 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         spell.setCharacter(character);
@@ -650,24 +634,25 @@ public class RpgCharacterController {
         } else {
             if (spell.getSpellCircle() == null || spell.getSpellCircle() < 1) {
                 redirectAttributes.addFlashAttribute("spellError", "Selecione um circulo valido ou marque como truque.");
-                return "redirect:/characters/view/" + characterId;
+                return redirectToCharacterView(characterId, campaignId);
             }
 
             if (!hasSpellSlotForCircle(character, spell.getSpellCircle())) {
                 redirectAttributes.addFlashAttribute("spellError", "Cadastre o espaco desse circulo antes de adicionar a magia.");
-                return "redirect:/characters/view/" + characterId;
+                return redirectToCharacterView(characterId, campaignId);
             }
         }
 
         characterSpellService.save(spell);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/spell-slots/save")
     public String saveSpellSlot(
             @PathVariable Long characterId,
             @ModelAttribute SpellSlot spellSlot,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -679,13 +664,13 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         spellSlot.setCharacter(character);
@@ -700,13 +685,14 @@ public class RpgCharacterController {
 
         spellSlotService.save(spellSlot);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @GetMapping("/{characterId}/items/delete/{itemId}")
     public String deleteItem(
             @PathVariable Long characterId,
             @PathVariable Long itemId,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -715,15 +701,21 @@ public class RpgCharacterController {
             return "redirect:/login";
         }
 
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+        if (characterOptional.isEmpty() || !canModifyCharacter(characterOptional.get(), user, campaignId)) {
+            return redirectToSafePlace(campaignId);
+        }
+
         inventoryItemService.delete(itemId);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @GetMapping("/{characterId}/spells/delete/{spellId}")
     public String deleteSpell(
             @PathVariable Long characterId,
             @PathVariable Long spellId,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -732,15 +724,21 @@ public class RpgCharacterController {
             return "redirect:/login";
         }
 
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+        if (characterOptional.isEmpty() || !canModifyCharacter(characterOptional.get(), user, campaignId)) {
+            return redirectToSafePlace(campaignId);
+        }
+
         characterSpellService.delete(spellId);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @GetMapping("/{characterId}/spell-slots/delete/{slotId}")
     public String deleteSpellSlot(
             @PathVariable Long characterId,
             @PathVariable Long slotId,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -749,9 +747,14 @@ public class RpgCharacterController {
             return "redirect:/login";
         }
 
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+        if (characterOptional.isEmpty() || !canModifyCharacter(characterOptional.get(), user, campaignId)) {
+            return redirectToSafePlace(campaignId);
+        }
+
         spellSlotService.delete(slotId);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/items/update/{itemId}")
@@ -759,6 +762,7 @@ public class RpgCharacterController {
             @PathVariable Long characterId,
             @PathVariable Long itemId,
             @ModelAttribute InventoryItem updatedItem,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -771,18 +775,18 @@ public class RpgCharacterController {
         Optional<InventoryItem> itemOptional = inventoryItemService.findById(itemId);
 
         if (characterOptional.isEmpty() || itemOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
         InventoryItem item = itemOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         if (!item.getCharacter().getId().equals(character.getId())) {
-            return "redirect:/characters/view/" + characterId;
+            return redirectToCharacterView(characterId, campaignId);
         }
 
         item.setName(updatedItem.getName());
@@ -795,7 +799,7 @@ public class RpgCharacterController {
 
         inventoryItemService.save(item);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/spells/update/{spellId}")
@@ -803,6 +807,7 @@ public class RpgCharacterController {
             @PathVariable Long characterId,
             @PathVariable Long spellId,
             @ModelAttribute CharacterSpell updatedSpell,
+            @RequestParam(required = false) Long campaignId,
             RedirectAttributes redirectAttributes,
             HttpSession session
     ) {
@@ -816,18 +821,18 @@ public class RpgCharacterController {
         Optional<CharacterSpell> spellOptional = characterSpellService.findById(spellId);
 
         if (characterOptional.isEmpty() || spellOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
         CharacterSpell spell = spellOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         if (!spell.getCharacter().getId().equals(character.getId())) {
-            return "redirect:/characters/view/" + characterId;
+            return redirectToCharacterView(characterId, campaignId);
         }
 
         spell.setName(updatedSpell.getName());
@@ -843,12 +848,12 @@ public class RpgCharacterController {
         } else {
             if (updatedSpell.getSpellCircle() == null || updatedSpell.getSpellCircle() < 1) {
                 redirectAttributes.addFlashAttribute("spellError", "Selecione um circulo valido ou marque como truque.");
-                return "redirect:/characters/view/" + characterId;
+                return redirectToCharacterView(characterId, campaignId);
             }
 
             if (!hasSpellSlotForCircle(character, updatedSpell.getSpellCircle())) {
                 redirectAttributes.addFlashAttribute("spellError", "Cadastre o espaco desse circulo antes de salvar a magia.");
-                return "redirect:/characters/view/" + characterId;
+                return redirectToCharacterView(characterId, campaignId);
             }
 
             spell.setSpellCircle(updatedSpell.getSpellCircle());
@@ -856,7 +861,7 @@ public class RpgCharacterController {
 
         characterSpellService.save(spell);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/spell-slots/update/{slotId}")
@@ -864,6 +869,7 @@ public class RpgCharacterController {
             @PathVariable Long characterId,
             @PathVariable Long slotId,
             @ModelAttribute SpellSlot updatedSlot,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -876,18 +882,18 @@ public class RpgCharacterController {
         Optional<SpellSlot> slotOptional = spellSlotService.findById(slotId);
 
         if (characterOptional.isEmpty() || slotOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
         SpellSlot slot = slotOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         if (!slot.getCharacter().getId().equals(character.getId())) {
-            return "redirect:/characters/view/" + characterId;
+            return redirectToCharacterView(characterId, campaignId);
         }
 
         slot.setSpellCircle(updatedSlot.getSpellCircle());
@@ -908,13 +914,14 @@ public class RpgCharacterController {
 
         spellSlotService.save(slot);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/abilities/save")
     public String saveAbility(
             @PathVariable Long characterId,
             @ModelAttribute CharacterAbility ability,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -926,20 +933,20 @@ public class RpgCharacterController {
         Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
 
         if (characterOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         ability.setCharacter(character);
         normalizeAbilityUses(ability);
         characterAbilityService.save(ability);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/abilities/update/{abilityId}")
@@ -947,6 +954,7 @@ public class RpgCharacterController {
             @PathVariable Long characterId,
             @PathVariable Long abilityId,
             @ModelAttribute CharacterAbility updatedAbility,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -959,18 +967,18 @@ public class RpgCharacterController {
         Optional<CharacterAbility> abilityOptional = characterAbilityService.findById(abilityId);
 
         if (characterOptional.isEmpty() || abilityOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
         CharacterAbility ability = abilityOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())) {
-            return "redirect:/characters";
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
         }
 
         if (!ability.getCharacter().getId().equals(character.getId())) {
-            return "redirect:/characters/view/" + characterId;
+            return redirectToCharacterView(characterId, campaignId);
         }
 
         ability.setName(updatedAbility.getName());
@@ -982,13 +990,14 @@ public class RpgCharacterController {
 
         characterAbilityService.save(ability);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @GetMapping("/{characterId}/abilities/delete/{abilityId}")
     public String deleteAbility(
             @PathVariable Long characterId,
             @PathVariable Long abilityId,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -997,9 +1006,14 @@ public class RpgCharacterController {
             return "redirect:/login";
         }
 
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+        if (characterOptional.isEmpty() || !canModifyCharacter(characterOptional.get(), user, campaignId)) {
+            return redirectToSafePlace(campaignId);
+        }
+
         characterAbilityService.delete(abilityId);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/abilities/{abilityId}/uses/adjust")
@@ -1007,6 +1021,7 @@ public class RpgCharacterController {
             @PathVariable Long characterId,
             @PathVariable Long abilityId,
             @RequestParam Integer delta,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -1019,15 +1034,15 @@ public class RpgCharacterController {
         Optional<CharacterAbility> abilityOptional = characterAbilityService.findById(abilityId);
 
         if (characterOptional.isEmpty() || abilityOptional.isEmpty()) {
-            return "redirect:/characters";
+            return redirectToSafePlace(campaignId);
         }
 
         RpgCharacter character = characterOptional.get();
         CharacterAbility ability = abilityOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())
+        if (!canModifyCharacter(character, user, campaignId)
                 || !ability.getCharacter().getId().equals(character.getId())) {
-            return "redirect:/characters/view/" + characterId;
+            return redirectToCharacterView(characterId, campaignId);
         }
 
         int current = ability.getUses() == null ? 0 : ability.getUses();
@@ -1037,7 +1052,7 @@ public class RpgCharacterController {
 
         characterAbilityService.save(ability);
 
-        return "redirect:/characters/view/" + characterId;
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     @PostMapping("/{characterId}/abilities/{abilityId}/uses/adjust.json")
@@ -1046,6 +1061,7 @@ public class RpgCharacterController {
             @PathVariable Long characterId,
             @PathVariable Long abilityId,
             @RequestParam Integer delta,
+            @RequestParam(required = false) Long campaignId,
             HttpSession session
     ) {
         User user = (User) session.getAttribute("loggedUser");
@@ -1064,7 +1080,7 @@ public class RpgCharacterController {
         RpgCharacter character = characterOptional.get();
         CharacterAbility ability = abilityOptional.get();
 
-        if (!character.getUser().getId().equals(user.getId())
+        if (!canModifyCharacter(character, user, campaignId)
                 || !ability.getCharacter().getId().equals(character.getId())) {
             return ResponseEntity.status(403).build();
         }
@@ -1140,27 +1156,240 @@ public class RpgCharacterController {
         RpgCharacter character = characterOptional.get();
 
         boolean isMember = campaignService.isMember(campaign, user);
+        boolean canView = campaignService.canViewCharacterInCampaign(campaign, character, user);
         boolean canEdit = campaignService.canEditCharacterInCampaign(campaign, character, user);
 
-        if (!isMember || !canEdit) {
+        if (!isMember || !canView) {
             return "redirect:/campaigns/view/" + campaignId;
         }
 
-        model.addAttribute("character", character);
+        addCharacterViewAttributes(model, character);
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("canEditCharacter", canEdit);
 
-        // Se sua tela de ficha usa itens, magias e espaços, mantenha estes atributos:
-        model.addAttribute("items", inventoryItemService.findByCharacter(character));
-        model.addAttribute("spellSlots", spellSlotService.findByCharacter(character));
-        model.addAttribute("spells", characterSpellService.findByCharacter(character));
-        model.addAttribute("circles", List.of(1, 2, 3, 4, 5, 6, 7, 8, 9));
+        return "characters/view";
+    }
 
+    @PostMapping("/{characterId}/lore/save")
+    public String saveLore(
+            @PathVariable Long characterId,
+            @RequestParam(required = false) String backstory,
+            @RequestParam(required = false) String appearance,
+            @RequestParam(required = false) String personalityTraits,
+            @RequestParam(required = false) String ideals,
+            @RequestParam(required = false) String bonds,
+            @RequestParam(required = false) String flaws,
+            @RequestParam(required = false) String notes,
+            @RequestParam(required = false) Long campaignId,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+
+        if (characterOptional.isEmpty()) {
+            return redirectToSafePlace(campaignId);
+        }
+
+        RpgCharacter character = characterOptional.get();
+
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
+        }
+
+        character.setBackstory(backstory);
+        character.setAppearance(appearance);
+        character.setPersonalityTraits(personalityTraits);
+        character.setIdeals(ideals);
+        character.setBonds(bonds);
+        character.setFlaws(flaws);
+        character.setNotes(notes);
+
+        rpgCharacterService.save(character);
+
+        return redirectToCharacterView(characterId, campaignId);
+    }
+
+    @PostMapping("/{characterId}/images/save")
+    public String saveCharacterImages(
+            @PathVariable Long characterId,
+            @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles,
+            @RequestParam(required = false) String caption,
+            @RequestParam(required = false) Long campaignId,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+
+        if (characterOptional.isEmpty()) {
+            return redirectToSafePlace(campaignId);
+        }
+
+        RpgCharacter character = characterOptional.get();
+
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
+        }
+
+        if (imageFiles != null) {
+            for (MultipartFile imageFile : imageFiles) {
+                if (imageFile == null || imageFile.isEmpty()) {
+                    continue;
+                }
+
+                String contentType = imageFile.getContentType();
+
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    continue;
+                }
+
+                try {
+                    CharacterImage image = new CharacterImage();
+                    image.setCharacter(character);
+                    image.setCaption(caption);
+                    image.setContentType(contentType);
+                    image.setUploadedAt(java.time.LocalDateTime.now());
+                    image.setImageData(imageFile.getBytes());
+
+                    characterImageService.save(image);
+                } catch (IOException ignored) {
+                    // Ignora arquivo com falha de leitura
+                }
+            }
+        }
+
+        return redirectToCharacterView(characterId, campaignId);
+    }
+
+    @GetMapping("/images/{imageId}")
+    @ResponseBody
+    public ResponseEntity<byte[]> characterImage(
+            @PathVariable Long imageId,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Optional<CharacterImage> imageOptional = characterImageService.findById(imageId);
+
+        if (imageOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        CharacterImage image = imageOptional.get();
+        RpgCharacter character = image.getCharacter();
+
+        boolean isOwner = character.getUser() != null
+                && character.getUser().getId().equals(user.getId());
+
+        boolean canViewThroughCampaign = campaignService.canViewCharacterThroughCampaign(character, user);
+
+        if (!isOwner && !canViewThroughCampaign) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (!image.hasImage()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        MediaType contentType = MediaType.APPLICATION_OCTET_STREAM;
+
+        if (image.getContentType() != null && !image.getContentType().isBlank()) {
+            try {
+                contentType = MediaType.parseMediaType(image.getContentType());
+            } catch (IllegalArgumentException ignored) {
+                contentType = MediaType.APPLICATION_OCTET_STREAM;
+            }
+        }
+
+        return ResponseEntity.ok()
+                .contentType(contentType)
+                .body(image.getImageData());
+    }
+
+    private void addCharacterViewAttributes(Model model, RpgCharacter character) {
+        List<CharacterSpell> spells = characterSpellService.findByCharacter(character);
+        List<SpellSlot> spellSlots = spellSlotService.findByCharacter(character);
+
+        Map<Integer, SpellSlot> spellSlotByCicle = new TreeMap<>();
+
+        for (SpellSlot slot : spellSlots) {
+            Integer circle = slot.getSpellCircle();
+
+            if (circle != null && circle > 0) {
+                spellSlotByCicle.putIfAbsent(circle, slot);
+            }
+        }
+
+        List<Integer> availableSpellCircles = new ArrayList<>(spellSlotByCicle.keySet());
+        List<SpellSlot> availableSpellSlots = new ArrayList<>(spellSlotByCicle.values());
+
+        model.addAttribute("character", character);
+
+        model.addAttribute("items", inventoryItemService.findByCharacter(character));
         model.addAttribute("newItem", new InventoryItem());
+
+        model.addAttribute("spells", spells);
         model.addAttribute("newSpell", new CharacterSpell());
+
+        model.addAttribute("spellSlots", spellSlots);
+        model.addAttribute("spellSlotByCircle", spellSlotByCicle);
+        model.addAttribute("spellSlots", availableSpellSlots);
+        model.addAttribute("circles", availableSpellCircles);
         model.addAttribute("newSpellSlot", new SpellSlot());
 
-        return "characters/view";
+        model.addAttribute("abilities", characterAbilityService.findByCharacter(character));
+        model.addAttribute("newAbility", new CharacterAbility());
+
+        model.addAttribute("characterImages", characterImageService.findByCharacter(character));
+    }
+
+    @GetMapping("/{characterId}/images/delete/{imageId}")
+    public String deleteCharacterImage(
+            @PathVariable Long characterId,
+            @PathVariable Long imageId,
+            @RequestParam(required = false) Long campaignId,
+            HttpSession session
+    ) {
+        User user = (User) session.getAttribute("loggedUser");
+
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(characterId);
+        Optional<CharacterImage> imageOptional = characterImageService.findById(imageId);
+
+        if (characterOptional.isEmpty() || imageOptional.isEmpty()) {
+            return redirectToSafePlace(campaignId);
+        }
+
+        RpgCharacter character = characterOptional.get();
+        CharacterImage image = imageOptional.get();
+
+        if (!canModifyCharacter(character, user, campaignId)) {
+            return redirectToSafePlace(campaignId);
+        }
+
+        if (!image.getCharacter().getId().equals(character.getId())) {
+            return redirectToCharacterView(characterId, campaignId);
+        }
+
+        characterImageService.delete(imageId);
+
+        return redirectToCharacterView(characterId, campaignId);
     }
 
     private void normalizeAbilityUses(CharacterAbility ability) {
@@ -1227,6 +1456,14 @@ public class RpgCharacterController {
         target.setProfSleightOfHand(source.getProfSleightOfHand());
         target.setProfReligion(source.getProfReligion());
         target.setProfSurvival(source.getProfSurvival());
+
+        target.setBackstory(source.getBackstory());
+        target.setAppearance(source.getAppearance());
+        target.setPersonalityTraits(source.getPersonalityTraits());
+        target.setIdeals(source.getIdeals());
+        target.setBonds(source.getBonds());
+        target.setFlaws(source.getFlaws());
+        target.setNotes(source.getNotes());
     }
 
     /** Se mais de 2 saves estiverem marcados, desmarca os excedentes (ordem: CAR, SAB, INT, CON, DES, FOR). */
@@ -1273,5 +1510,44 @@ public class RpgCharacterController {
         return spellCircle != null
                 && spellCircle > 0
                 && spellSlotService.findByCharacterAndSpellCircle(character, spellCircle).isPresent();
+    }
+
+    private boolean canModifyCharacter(RpgCharacter character, User user, Long campaignId) {
+        boolean isOwner = character.getUser() != null
+                && character.getUser().getId().equals(user.getId());
+
+        if (isOwner) {
+            return true;
+        }
+
+        if (campaignId == null) {
+            return false;
+        }
+
+        Optional<Campaign> campaignOptional = campaignService.findById(campaignId);
+
+        if (campaignOptional.isEmpty()) {
+            return false;
+        }
+
+        Campaign campaign = campaignOptional.get();
+
+        return campaignService.canEditCharacterInCampaign(campaign, character, user);
+    }
+
+    private String redirectToCharacterView(Long characterId, Long campaignId) {
+        if (campaignId != null) {
+            return "redirect:/characters/campaign/" + campaignId + "/view/" + characterId;
+        }
+
+        return "redirect:/characters/view/" + characterId;
+    }
+
+    private String redirectToSafePlace(Long campaignId) {
+        if (campaignId != null) {
+            return "redirect:/campaigns/view/" + campaignId;
+        }
+
+        return "redirect:/characters";
     }
 }

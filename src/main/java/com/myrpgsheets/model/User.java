@@ -34,4 +34,23 @@ public class User {
 
     @NotBlank(message = "Password is required.")
     private String password;
+
+    private String displayName;
+
+    @Column(length = 500)
+    private String bio;
+
+    private String preferredSystem;
+
+    public String getDisplayNameOrUserName() {
+        if (displayName != null && !displayName.isBlank()) {
+            return displayName;
+        }
+
+        if (userName != null && !userName.isBlank()) {
+            return userName;
+        }
+
+        return name;
+    }
 }

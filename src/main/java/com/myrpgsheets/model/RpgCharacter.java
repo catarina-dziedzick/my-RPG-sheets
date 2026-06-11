@@ -135,6 +135,27 @@ public class RpgCharacter {
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SpellSlot> spellSlots;
 
+    @Column(length = 5000)
+    private String backstory;
+
+    @Column(length = 2000)
+    private String appearance;
+
+    @Column(length = 1000)
+    private String personalityTraits;
+
+    @Column(length = 1000)
+    private String ideals;
+
+    @Column(length = 1000)
+    private String bonds;
+
+    @Column(length = 1000)
+    private String flaws;
+
+    @Column(length = 3000)
+    private String notes;
+
     // Métodos para calcular bônus de proficiência, modificadores de habilidade, etc.
 
     public Integer getProficiencyBonus() {

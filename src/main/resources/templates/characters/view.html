@@ -9,13 +9,7 @@
 </head>
 <body class="app-bg">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-    <a class="navbar-brand fw-bold" href="/dashboard">MyRPG Sheets</a>
-
-    <div class="ms-auto">
-        <a href="/characters" class="btn btn-outline-light btn-sm">Voltar</a>
-    </div>
-</nav>
+<div th:replace="~{fragments/navbar :: appNavbar}"></div>
 
 <main class="container py-5">
     <ul class="nav nav-pills sheet-tabs mb-4" id="sheetTabs" role="tablist">
@@ -45,6 +39,13 @@
                     data-bs-target="#tab-abilities" type="button" role="tab"
                     aria-controls="tab-abilities" aria-selected="false">
                 Habilidades
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-lore-btn" data-bs-toggle="pill"
+                    data-bs-target="#tab-lore" type="button" role="tab"
+                    aria-controls="tab-lore" aria-selected="false">
+                História & Aparência
             </button>
         </li>
     </ul>
@@ -133,26 +134,26 @@
                     </div>
 
                     <div class="hp-actions mt-2">
-                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
+                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id}, campaignId=${campaignId})}" method="post">
                             <input type="hidden" name="delta" value="-5">
                             <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">-5</button>
                         </form>
-                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
+                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id}, campaignId=${campaignId})}" method="post">
                             <input type="hidden" name="delta" value="-1">
                             <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">-1</button>
                         </form>
-                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
+                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id}, campaignId=${campaignId})}" method="post">
                             <input type="hidden" name="delta" value="1">
                             <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">+1</button>
                         </form>
-                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id})}" method="post">
+                        <form th:action="@{/characters/{id}/hit-points/adjust(id=${character.id}, campaignId=${campaignId})}" method="post">
                             <input type="hidden" name="delta" value="5">
                             <button type="submit" class="btn btn-sm btn-outline-secondary hp-btn">+5</button>
                         </form>
                     </div>
 
                     <form class="hp-set-form mt-2"
-                          th:action="@{/characters/{id}/hit-points/set(id=${character.id})}"
+                          th:action="@{/characters/{id}/hit-points/set(id=${character.id}, campaignId=${campaignId})}"
                           method="post">
                         <input type="number"
                                name="hitPoints"
@@ -184,7 +185,7 @@
                     </div>
 
                     <form class="hp-set-form mt-2"
-                          th:action="@{/characters/{id}/temp-hp/set(id=${character.id})}"
+                          th:action="@{/characters/{id}/temp-hp/set(id=${character.id}, campaignId=${campaignId})}"
                           method="post">
                         <input type="number"
                                name="temporaryHitPoints"
@@ -507,7 +508,7 @@
             <p class="text-muted mb-0">Itens, equipamentos e recursos do personagem.</p>
         </div>
 
-        <form class="mb-4" th:action="@{/characters/{id}/items/save(id=${character.id})}" method="post" th:object="${newItem}">
+        <form class="mb-4" th:action="@{/characters/{id}/items/save(id=${character.id}, campaignId=${campaignId})}" method="post" th:object="${newItem}">
             <div class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label class="form-label">Nome do item</label>
@@ -553,7 +554,7 @@
                                 Editar
                             </button>
 
-                            <a th:href="@{/characters/{characterId}/items/delete/{itemId}(characterId=${character.id}, itemId=${item.id})}"
+                            <a th:href="@{/characters/{characterId}/items/delete/{itemId}(characterId=${character.id}, itemId=${item.id}, campaignId=${campaignId})}"
                                class="btn btn-sm btn-outline-danger"
                                onclick="return confirm('Deseja excluir este item?')">
                                 Excluir
@@ -567,7 +568,7 @@
                     </p>
 
                     <div class="collapse mt-3" th:id="'editItem' + ${item.id}">
-                        <form th:action="@{/characters/{characterId}/items/update/{itemId}(characterId=${character.id}, itemId=${item.id})}" method="post">
+                        <form th:action="@{/characters/{characterId}/items/update/{itemId}(characterId=${character.id}, itemId=${item.id}, campaignId=${campaignId})}" method="post">
                             <div class="mb-2">
                                 <label class="form-label">Nome</label>
                                 <input type="text" name="name" class="form-control" th:value="${item.name}" required>
@@ -601,7 +602,7 @@
             <p class="text-muted mb-0">Controle de espaços totais e usados por círculo.</p>
         </div>
 
-        <form class="mb-4" th:action="@{/characters/{id}/spell-slots/save(id=${character.id})}" method="post" th:object="${newSpellSlot}">
+        <form class="mb-4" th:action="@{/characters/{id}/spell-slots/save(id=${character.id}, campaignId=${campaignId})}" method="post" th:object="${newSpellSlot}">
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label">Círculo</label>
@@ -666,7 +667,7 @@
                                 Editar
                             </button>
 
-                            <a th:href="@{/characters/{characterId}/spell-slots/delete/{slotId}(characterId=${character.id}, slotId=${slot.id})}"
+                            <a th:href="@{/characters/{characterId}/spell-slots/delete/{slotId}(characterId=${character.id}, slotId=${slot.id}, campaignId=${campaignId})}"
                                class="btn btn-sm btn-outline-danger"
                                onclick="return confirm('Deseja excluir este controle de espaço?')">
                                 X
@@ -681,7 +682,7 @@
                     </div>
 
                     <div class="collapse mt-3" th:id="'editSlot' + ${slot.id}">
-                        <form th:action="@{/characters/{characterId}/spell-slots/update/{slotId}(characterId=${character.id}, slotId=${slot.id})}" method="post">
+                        <form th:action="@{/characters/{characterId}/spell-slots/update/{slotId}(characterId=${character.id}, slotId=${slot.id}, campaignId=${campaignId})}" method="post">
                             <div class="mb-2">
                                 <label class="form-label text-light">Círculo</label>
                                 <select name="spellCircle" class="form-select">
@@ -744,7 +745,7 @@
             Cadastre o espaco de magia antes de adicionar a magia de circulo.
         </div>
 
-        <form class="mb-4" th:action="@{/characters/{id}/spells/save(id=${character.id})}" method="post" th:object="${newSpell}">
+        <form class="mb-4" th:action="@{/characters/{id}/spells/save(id=${character.id}, campaignId=${campaignId})}" method="post" th:object="${newSpell}">
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label">Nome da magia</label>
@@ -816,7 +817,7 @@
                                 Editar
                             </button>
 
-                            <a th:href="@{/characters/{characterId}/spells/delete/{spellId}(characterId=${character.id}, spellId=${spell.id})}"
+                            <a th:href="@{/characters/{characterId}/spells/delete/{spellId}(characterId=${character.id}, spellId=${spell.id}, campaignId=${campaignId})}"
                                class="btn btn-sm btn-outline-danger"
                                onclick="return confirm('Deseja excluir esta magia?')">
                                 Excluir
@@ -825,7 +826,7 @@
                     </div>
 
                     <div class="collapse mt-3" th:id="'editSpell' + ${spell.id}">
-                        <form th:action="@{/characters/{characterId}/spells/update/{spellId}(characterId=${character.id}, spellId=${spell.id})}" method="post">
+                        <form th:action="@{/characters/{characterId}/spells/update/{spellId}(characterId=${character.id}, spellId=${spell.id}, campaignId=${campaignId})}" method="post">
                             <div class="row g-2">
                                 <div class="col-md-4">
                                     <label class="form-label">Nome</label>
@@ -886,7 +887,7 @@
 
                 <div class="slot-pips" th:if="${slot != null && slot.totalSlots != null && slot.totalSlots > 0}">
                     <form th:each="pip : ${#numbers.sequence(1, slot.totalSlots)}"
-                          th:action="@{/characters/{id}/spell-slots/toggle(id=${character.id})}"
+                          th:action="@{/characters/{id}/spell-slots/toggle(id=${character.id}, campaignId=${campaignId})}"
                           method="post"
                           class="m-0">
                             <input type="hidden" name="spellCircle" th:value="${slot.spellCircle}">
@@ -930,7 +931,7 @@
                                 Editar
                             </button>
 
-                            <a th:href="@{/characters/{characterId}/spells/delete/{spellId}(characterId=${character.id}, spellId=${spell.id})}"
+                            <a th:href="@{/characters/{characterId}/spells/delete/{spellId}(characterId=${character.id}, spellId=${spell.id}, campaignId=${campaignId})}"
                                class="btn btn-sm btn-outline-danger"
                                onclick="return confirm('Deseja excluir esta magia?')">
                                 Excluir
@@ -939,7 +940,7 @@
                     </div>
 
                     <div class="collapse mt-3" th:id="'editSpell' + ${spell.id}">
-                        <form th:action="@{/characters/{characterId}/spells/update/{spellId}(characterId=${character.id}, spellId=${spell.id})}" method="post">
+                        <form th:action="@{/characters/{characterId}/spells/update/{spellId}(characterId=${character.id}, spellId=${spell.id}, campaignId=${campaignId})}" method="post">
                             <div class="row g-2">
                                 <div class="col-md-4">
                                     <label class="form-label">Nome</label>
@@ -996,7 +997,7 @@
             <p class="text-muted mb-0">Habilidades raciais, de classe, talentos e poderes especiais.</p>
         </div>
 
-        <form class="mb-4" th:action="@{/characters/{id}/abilities/save(id=${character.id})}" method="post" th:object="${newAbility}">
+        <form class="mb-4" th:action="@{/characters/{id}/abilities/save(id=${character.id}, campaignId=${campaignId})}" method="post" th:object="${newAbility}">
             <div class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label class="form-label">Nome</label>
@@ -1083,7 +1084,7 @@
                                 Editar
                             </button>
 
-                            <a th:href="@{/characters/{cid}/abilities/delete/{aid}(cid=${character.id}, aid=${ability.id})}"
+                            <a th:href="@{/characters/{cid}/abilities/delete/{aid}(cid=${character.id}, aid=${ability.id}, campaignId=${campaignId})}"
                                class="btn btn-sm btn-outline-danger"
                                onclick="return confirm('Deseja excluir esta habilidade?')">
                                 Excluir
@@ -1097,7 +1098,7 @@
                     </p>
 
                     <div class="collapse mt-3" th:id="'editAbility' + ${ability.id}">
-                        <form th:action="@{/characters/{cid}/abilities/update/{aid}(cid=${character.id}, aid=${ability.id})}" method="post">
+                        <form th:action="@{/characters/{cid}/abilities/update/{aid}(cid=${character.id}, aid=${ability.id}, campaignId=${campaignId})}" method="post">
                             <div class="row g-2">
                                 <div class="col-md-5">
                                     <label class="form-label">Nome</label>
@@ -1141,6 +1142,160 @@
     </section>
     </div><!-- /tab-abilities -->
 
+        <div class="tab-pane fade" id="tab-lore" role="tabpanel" aria-labelledby="tab-lore-btn">
+            <section class="sheet-card mb-4">
+                <div class="mb-4">
+                    <h2 class="fw-bold mb-1">História & Aparência</h2>
+                    <p class="text-muted mb-0">
+                        Informações narrativas, personalidade e detalhes visuais do personagem.
+                    </p>
+                </div>
+
+                <form th:action="@{/characters/{id}/lore/save(id=${character.id})}" method="post">
+                    <input type="hidden" name="campaignId" th:if="${campaignId != null}" th:value="${campaignId}">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Aparência</label>
+                            <textarea name="appearance"
+                                      class="form-control"
+                                      rows="5"
+                                      placeholder="Descrição física, roupas, marcas, postura, presença..."
+                                      th:text="${character.appearance}"></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Traços de personalidade</label>
+                            <textarea name="personalityTraits"
+                                      class="form-control"
+                                      rows="5"
+                                      placeholder="Como o personagem age, fala, reage e se comporta."
+                                      th:text="${character.personalityTraits}"></textarea>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Ideais</label>
+                            <textarea name="ideals"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Crenças, valores e princípios."
+                                      th:text="${character.ideals}"></textarea>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Vínculos</label>
+                            <textarea name="bonds"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Pessoas, lugares, juramentos ou memórias importantes."
+                                      th:text="${character.bonds}"></textarea>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Defeitos</label>
+                            <textarea name="flaws"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Medos, falhas, vícios ou conflitos internos."
+                                      th:text="${character.flaws}"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Backstory</label>
+                            <textarea name="backstory"
+                                      class="form-control"
+                                      rows="8"
+                                      placeholder="Conte a história do personagem, origem, eventos marcantes e motivações."
+                                      th:text="${character.backstory}"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Anotações extras</label>
+                            <textarea name="notes"
+                                      class="form-control"
+                                      rows="5"
+                                      placeholder="Segredos, objetivos, relações, ideias para evolução do personagem..."
+                                      th:text="${character.notes}"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-warning btn-lg fw-semibold">
+                            Salvar história
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="sheet-card">
+                <div class="mb-4">
+                    <h2 class="fw-bold mb-1">Galeria do Personagem</h2>
+                    <p class="text-muted mb-0">
+                        Adicione artes, retratos, referências visuais e imagens importantes do personagem.
+                    </p>
+                </div>
+
+                <form th:action="@{/characters/{id}/images/save(id=${character.id})}"
+                      method="post"
+                      enctype="multipart/form-data"
+                      class="mb-4">
+
+                    <input type="hidden" name="campaignId" th:if="${campaignId != null}" th:value="${campaignId}">
+
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Imagens</label>
+                            <input type="file"
+                                   name="imageFiles"
+                                   class="form-control"
+                                   accept="image/*"
+                                   multiple>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label">Legenda</label>
+                            <input type="text"
+                                   name="caption"
+                                   class="form-control"
+                                   placeholder="Ex: Roupa formal, arte de batalha, aparência atual...">
+                        </div>
+
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-warning w-100 fw-semibold">
+                                Enviar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div th:if="${#lists.isEmpty(characterImages)}" class="empty-mini">
+                    Nenhuma imagem adicionada ainda.
+                </div>
+
+                <div class="row g-4" th:if="${!#lists.isEmpty(characterImages)}">
+                    <div class="col-md-6 col-lg-4" th:each="image : ${characterImages}">
+                        <div class="character-image-card h-100">
+                            <img class="character-gallery-img"
+                                 th:src="@{/characters/images/{id}(id=${image.id})}"
+                                 alt="Imagem do personagem">
+
+                            <div class="p-3">
+                                <p class="mb-2 text-muted"
+                                   th:text="${image.caption != null && image.caption != '' ? image.caption : 'Sem legenda.'}">
+                                    Legenda da imagem.
+                                </p>
+
+                                <a th:href="@{/characters/{characterId}/images/delete/{imageId}(characterId=${character.id}, imageId=${image.id}, campaignId=${campaignId})}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Deseja excluir esta imagem?')">
+                                    Excluir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div><!-- /tab-lore -->
     </div><!-- /tab-content -->
 
 </main>
@@ -1172,6 +1327,7 @@
     })();
 
     // Ajuste de usos de habilidades sem recarregar a página
+    const PAGE_CAMPAIGN_ID = /*[[${campaignId}]]*/ null;
     document.addEventListener('click', function (event) {
         const btn = event.target.closest('.ability-use-btn');
         if (!btn) return;
@@ -1184,10 +1340,15 @@
 
         btn.disabled = true;
 
+        let body = 'delta=' + encodeURIComponent(delta);
+        if (PAGE_CAMPAIGN_ID !== null && PAGE_CAMPAIGN_ID !== undefined && PAGE_CAMPAIGN_ID !== '') {
+            body += '&campaignId=' + encodeURIComponent(PAGE_CAMPAIGN_ID);
+        }
+
         fetch(`/characters/${characterId}/abilities/${abilityId}/uses/adjust.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'delta=' + encodeURIComponent(delta)
+            body: body
         })
         .then(function (res) {
             if (!res.ok) throw new Error('Falha na atualização');

@@ -51,4 +51,80 @@ public class UserService {
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
+
+    public User updateProfile(
+            User loggedUser,
+            String name,
+            String email,
+            String userName,
+            String displayName,
+            String bio,
+            String preferredSystem
+    ) {
+        User user = userRepository.findById(loggedUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        String normalizedName = name != null ? name.trim() : "";
+        String normalizedEmail = email != null ? email.trim() : "";
+        String normalizedUserName = userName != null ? userName.trim() : "";
+
+        if (normalizedName.isBlank()) {
+            throw new RuntimeException("O nome completo é obrigatório.");
+        }
+
+        if (normalizedEmail.isBlank()) {
+            throw new RuntimeException("O e-mail é obrigatório.");
+        }
+
+        if (normalizedUserName.isBlank()) {
+            throw new RuntimeException("O nome de usuário é obrigatório.");
+        }
+
+        if (userRepository.existsByEmailAndIdNot(normalizedEmail, user.getId())) {
+            throw new RuntimeException("Este e-mail já está em uso.");
+        }
+
+        if (userRepository.existsByUserNameAndIdNot(normalizedUserName, user.getId())) {
+            throw new RuntimeException("Este nome de usuário já está em uso.");
+        }
+
+        user.setName(normalizedName);
+        user.setEmail(normalizedEmail);
+        user.setUserName(normalizedUserName);
+        user.setDisplayName(displayName != null ? displayName.trim() : null);
+        user.setBio(bio != null ? bio.trim() : null);
+        user.setPreferredSystem(preferredSystem != null ? preferredSystem.trim() : null);
+
+        return userRepository.save(user);
+    }
+
+    public User changePassword(
+            User loggedUser,
+            String currentPassword,
+            String newPassword,
+            String confirmPassword
+    ) {
+        User user = userRepository.findById(loggedUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        if (currentPassword == null || !user.getPassword().equals(currentPassword)) {
+            throw new RuntimeException("Senha atual incorreta.");
+        }
+
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new RuntimeException("A nova senha é obrigatória.");
+        }
+
+        if (newPassword.length() < 4) {
+            throw new RuntimeException("A nova senha deve ter pelo menos 4 caracteres.");
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            throw new RuntimeException("A confirmação da senha não confere.");
+        }
+
+        user.setPassword(newPassword);
+
+        return userRepository.save(user);
+    }
 }
