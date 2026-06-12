@@ -633,12 +633,12 @@ public class RpgCharacterController {
             spell.setSpellCircle(0);
         } else {
             if (spell.getSpellCircle() == null || spell.getSpellCircle() < 1) {
-                redirectAttributes.addFlashAttribute("spellError", "Selecione um circulo valido ou marque como truque.");
+                redirectAttributes.addFlashAttribute("spellError", "Selecione um círculo válido ou marque como truque.");
                 return redirectToCharacterView(characterId, campaignId);
             }
 
             if (!hasSpellSlotForCircle(character, spell.getSpellCircle())) {
-                redirectAttributes.addFlashAttribute("spellError", "Cadastre o espaco desse circulo antes de adicionar a magia.");
+                redirectAttributes.addFlashAttribute("spellError", "Cadastre o espaço desse círculo antes de adicionar a magia.");
                 return redirectToCharacterView(characterId, campaignId);
             }
         }
@@ -1323,18 +1323,18 @@ public class RpgCharacterController {
         List<CharacterSpell> spells = characterSpellService.findByCharacter(character);
         List<SpellSlot> spellSlots = spellSlotService.findByCharacter(character);
 
-        Map<Integer, SpellSlot> spellSlotByCicle = new TreeMap<>();
+        Map<Integer, SpellSlot> spellSlotsByCircle = new TreeMap<>();
 
         for (SpellSlot slot : spellSlots) {
             Integer circle = slot.getSpellCircle();
 
             if (circle != null && circle > 0) {
-                spellSlotByCicle.putIfAbsent(circle, slot);
+                spellSlotsByCircle.putIfAbsent(circle, slot);
             }
         }
 
-        List<Integer> availableSpellCircles = new ArrayList<>(spellSlotByCicle.keySet());
-        List<SpellSlot> availableSpellSlots = new ArrayList<>(spellSlotByCicle.values());
+        List<Integer> availableSpellCircles = new ArrayList<>(spellSlotsByCircle.keySet());
+        List<SpellSlot> availableSpellSlots = new ArrayList<>(spellSlotsByCircle.values());
 
         model.addAttribute("character", character);
 
@@ -1345,9 +1345,9 @@ public class RpgCharacterController {
         model.addAttribute("newSpell", new CharacterSpell());
 
         model.addAttribute("spellSlots", spellSlots);
-        model.addAttribute("spellSlotByCircle", spellSlotByCicle);
-        model.addAttribute("spellSlots", availableSpellSlots);
-        model.addAttribute("circles", availableSpellCircles);
+        model.addAttribute("spellSlotsByCircle", spellSlotsByCircle);
+        model.addAttribute("availableSpellCircles", availableSpellCircles);
+        model.addAttribute("availableSpellSlots", availableSpellSlots);
         model.addAttribute("newSpellSlot", new SpellSlot());
 
         model.addAttribute("abilities", characterAbilityService.findByCharacter(character));

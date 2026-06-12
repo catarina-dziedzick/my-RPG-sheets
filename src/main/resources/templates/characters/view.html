@@ -746,6 +746,8 @@
         </div>
 
         <form class="mb-4" th:action="@{/characters/{id}/spells/save(id=${character.id}, campaignId=${campaignId})}" method="post" th:object="${newSpell}">
+            <input type="hidden" name="campaignId" th:if="${campaignId != null}" th:value="${campaignId}">
+
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label">Nome da magia</label>
@@ -764,10 +766,11 @@
                     <label class="form-label">Círculo</label>
                     <select th:field="*{spellCircle}" class="form-select">
                         <option value="0">Truque</option>
+
                         <option th:each="circle : ${availableSpellCircles}"
                                 th:value="${circle}"
-                                th:text="${circle} + 'º'">
-                            1º
+                                th:text="${circle} + 'º Círculo'">
+                            1º Círculo
                         </option>
                     </select>
                 </div>
