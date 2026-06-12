@@ -9,4 +9,6 @@ import java.util.List;
 public interface CharacterImageRepository extends JpaRepository<CharacterImage, Long> {
 
     List<CharacterImage> findByCharacterOrderByUploadedAtDesc(RpgCharacter character);
+
+    void deleteByCharacter(RpgCharacter character);
 }

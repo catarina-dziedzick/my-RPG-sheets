@@ -9,5 +9,7 @@ import java.util.List;
 public interface CharacterAbilityRepository extends JpaRepository<CharacterAbility, Long> {
 
     List<CharacterAbility> findByCharacter(RpgCharacter character);
+
+    void deleteByCharacter(RpgCharacter character);
 }
 

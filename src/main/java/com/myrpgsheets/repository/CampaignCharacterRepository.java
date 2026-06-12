@@ -20,4 +20,6 @@ public interface CampaignCharacterRepository extends JpaRepository<CampaignChara
     boolean existsByCampaignAndCharacter(Campaign campaign, RpgCharacter character);
 
     List<CampaignCharacter> findByCharacterAndActiveTrue(RpgCharacter character);
+
+    void deleteByCharacter(RpgCharacter character);
 }

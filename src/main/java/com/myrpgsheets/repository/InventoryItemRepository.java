@@ -9,4 +9,6 @@ import java.util.List;
 public interface InventoryItemRepository extends JpaRepository<InventoryItem, Long> {
 
     List<InventoryItem> findByCharacter(RpgCharacter character);
+
+    void deleteByCharacter(RpgCharacter character);
 }

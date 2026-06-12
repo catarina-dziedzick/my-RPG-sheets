@@ -13,4 +13,6 @@ public interface CharacterSpellRepository extends JpaRepository<CharacterSpell, 
     List<CharacterSpell> findByCharacterAndSpellCircle(RpgCharacter character, Integer spellCircle);
 
     List<CharacterSpell> findByCharacterAndCantripTrue(RpgCharacter character);
+
+    void deleteByCharacter(RpgCharacter character);
 }

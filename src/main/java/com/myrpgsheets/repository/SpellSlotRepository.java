@@ -12,4 +12,6 @@ public interface SpellSlotRepository extends JpaRepository<SpellSlot, Long> {
     List<SpellSlot> findByCharacter(RpgCharacter character);
 
     Optional<SpellSlot> findByCharacterAndSpellCircle(RpgCharacter character, Integer spellCircle);
+
+    void deleteByCharacter(RpgCharacter character);
 }

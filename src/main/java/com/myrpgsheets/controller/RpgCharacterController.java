@@ -294,7 +294,20 @@ public class RpgCharacterController {
             return "redirect:/login";
         }
 
-        rpgCharacterService.delete(id);
+        Optional<RpgCharacter> characterOptional = rpgCharacterService.findById(id);
+
+        if (characterOptional.isEmpty()) {
+            return "redirect:/characters";
+        }
+
+        RpgCharacter character = characterOptional.get();
+
+        if (character.getUser() == null || !character.getUser().getId().equals(user.getId())) {
+            return "redirect:/characters";
+        }
+
+        rpgCharacterService.deleteCompletely(character);
+
         return "redirect:/characters";
     }
 
